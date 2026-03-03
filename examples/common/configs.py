@@ -4,10 +4,10 @@ from pathlib import Path
 
 import numpy as np
 
-# SO100 URDF: so100_minimal.urdf is a placeholder; replace with so100.urdf from SO-ARM100 for accurate mesh (see so100_description/urdf/README.md)
+# SO100 URDF: so100_minimal.urdf is a placeholder; replace with so100.urdf from SO-ARM100 for accurate mesh (see so101_description/urdf/README.md)
 URDF_PATH = str(
     Path(__file__).parent.parent.parent
-    / "so100_description"
+    / "so101_description"
     / "robot.urdf"
 )
 

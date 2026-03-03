@@ -104,7 +104,7 @@ python X_leader_arm_teleop_so100.py --real-robot \
 
 ## Configuration
 
-- **URDF**: `examples/common/configs.py` sets `URDF_PATH` to `so100_description/urdf/so100_minimal.urdf`. For accurate mesh, use the official [SO-ARM100](https://github.com/TheRobotStudio/SO-ARM100) URDF (see `so100_description/urdf/README.md`).
+- **URDF**: `examples/common/configs.py` sets `URDF_PATH` to `so101_description/urdf/so100_minimal.urdf`. For accurate mesh, use the official [SO-ARM100](https://github.com/TheRobotStudio/SO-ARM100) URDF (see `so101_description/urdf/README.md`).
 - **Neutral pose**: `NEUTRAL_JOINT_ANGLES` in `configs.py` (5 body joints in degrees).
 - **Joint names**: SO100 uses `shoulder_pan`, `shoulder_lift`, `elbow_flex`, `wrist_flex`, `wrist_roll` (+ gripper).
 - **Camera (USB webcam)**: The camera thread in `examples/common/threads/camera.py` uses OpenCV and a basic USB webcam. In `configs.py` you can set `CAMERA_DEVICE_INDEX` (0 = first camera), `CAMERA_WIDTH`, `CAMERA_HEIGHT`, and `CAMERA_FRAME_STREAMING_RATE`. Start the camera thread from your script if you need RGB frames (e.g. for logging or visualization).
@@ -117,7 +117,7 @@ example_lerobot_so100/
 │   ├── X_leader_arm_teleop_so100.py   # SO100 leader → SO100 follower teleop
 │   └── common/                       # Config, data manager, visualizer, threads
 ├── so100_controller.py               # SO100 follower controller (LeRobot SO100Follower)
-├── so100_description/urdf/            # SO100 URDF (minimal + README for official mesh)
+├── so101_description/urdf/            # SO100 URDF (minimal + README for official mesh)
 ├── environment.yaml
 └── README.md
 ```
