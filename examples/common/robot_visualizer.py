@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Shared robot visualizer for SO100 (and generic) robot demos.
+"""Shared robot visualizer for SO101 (and generic) robot demos.
 
 This module provides a clean interface for visualizing robot state using Viser,
 encapsulating all the repeated setup, GUI controls, and update logic.

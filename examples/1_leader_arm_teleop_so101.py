@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""SO100 leader arm → SO100 follower arm teleop (direct joint mapping).
+"""SO101 leader arm → SO101 follower arm teleop (direct joint mapping).
 
 """
 
@@ -12,24 +12,24 @@ from pathlib import Path
 
 import numpy as np
 
-# Repo root for so100_controller; examples for common.*
+# Repo root for so101_controller; examples for common.*
 _root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_root))
 sys.path.insert(0, str(_root / "examples"))
 
 from common.configs import (
-    LEADER_TO_SO100_JOINT,
+    LEADER_TO_SO101_JOINT,
     NEUTRAL_JOINT_ANGLES,
     ROBOT_RATE,
-    SO100_DIRECTIONS,
-    SO100_FIXED_JOINTS,
-    SO100_JOINT_LIMITS_DEG,
-    SO100_OFFSETS_DEG,
+    SO101_DIRECTIONS,
+    SO101_FIXED_JOINTS,
+    SO101_JOINT_LIMITS_DEG,
+    SO101_OFFSETS_DEG,
     URDF_JOINT_ORDER_FROM_OURS,
     VISUALIZATION_RATE,
 )
 from common.data_manager import DataManager, RobotActivityState
-from common.leader_arm import LerobotSO100LeaderArm
+from common.leader_arm import LerobotSO101LeaderArm
 from common.robot_visualizer import RobotVisualizer
 from common.threads.leader_reader import leader_reader_thread
 
@@ -49,11 +49,11 @@ def _joint_cfg_6_from_5_and_gripper(
 
 
 def main() -> None:
-    """Run SO100 leader → SO100 follower teleop (URDF and optionally real robot)."""
+    """Run SO101 leader → SO101 follower teleop (URDF and optionally real robot)."""
     from common.configs import URDF_PATH
 
     parser = argparse.ArgumentParser(
-        description="SO100 URDF / real-robot teleop with LeRobot SO100 leader arm."
+        description="SO101 URDF / real-robot teleop with LeRobot SO101 leader arm."
     )
     parser.add_argument("--leader-port", type=str, default="/dev/ttyACM0")
     parser.add_argument("--leader-id", type=str, default="my_awesome_leader_arm")
@@ -61,7 +61,7 @@ def main() -> None:
     parser.add_argument(
         "--real-robot",
         action="store_true",
-        help="Drive the real SO100 follower arm (default: URDF only)",
+        help="Drive the real SO101 follower arm (default: URDF only)",
     )
     parser.add_argument("--follower-port", type=str, default="/dev/ttyUSB0")
     parser.add_argument("--follower-id", type=str, default="my_awesome_follower_arm")
@@ -70,27 +70,27 @@ def main() -> None:
     use_real_robot = args.real_robot
     print("=" * 60)
     print(
-        "SO100 LEADER → SO100 FOLLOWER TELEOP"
+        "SO101 LEADER → SO101 FOLLOWER TELEOP"
         + (" – REAL ROBOT" if use_real_robot else " – URDF only")
     )
     print("=" * 60)
 
-    leader = LerobotSO100LeaderArm(port=args.leader_port, calibration_id=args.leader_id)
+    leader = LerobotSO101LeaderArm(port=args.leader_port, calibration_id=args.leader_id)
     leader.configure_follower(
-        follower_limits_deg=SO100_JOINT_LIMITS_DEG,
-        follower_offsets_deg=SO100_OFFSETS_DEG,
-        follower_directions=SO100_DIRECTIONS,
-        leader_to_follower_joint=LEADER_TO_SO100_JOINT,
-        fixed_joints=SO100_FIXED_JOINTS,
+        follower_limits_deg=SO101_JOINT_LIMITS_DEG,
+        follower_offsets_deg=SO101_OFFSETS_DEG,
+        follower_directions=SO101_DIRECTIONS,
+        leader_to_follower_joint=LEADER_TO_SO101_JOINT,
+        fixed_joints=SO101_FIXED_JOINTS,
     )
-    print("\n🦾 Connecting to SO100 leader arm...")
+    print("\n🦾 Connecting to SO101 leader arm...")
     try:
         leader.connect(calibrate=False)
     except Exception as e:
         print(f"Failed to connect to leader: {e}")
         if "no calibration registered" in str(e).lower():
             print(
-                "Run: lerobot-calibrate --teleop.type=so100_leader --teleop.port=... --teleop.id=..."
+                "Run: lerobot-calibrate --teleop.type=so101_leader --teleop.port=... --teleop.id=..."
             )
         sys.exit(1)
     print("✓ Leader arm connected")
@@ -102,10 +102,10 @@ def main() -> None:
     if use_real_robot:
         from common.threads.joint_state import joint_state_thread
 
-        from so100_controller import SO100Controller
+        from so101_controller import SO101Controller
 
-        print("\n🤖 Initializing SO100 follower controller...")
-        robot_controller = SO100Controller(
+        print("\n🤖 Initializing SO101 follower controller...")
+        robot_controller = SO101Controller(
             port=args.follower_port,
             follower_id=args.follower_id,
             robot_rate=ROBOT_RATE,
@@ -171,10 +171,10 @@ def main() -> None:
     print()
     if use_real_robot:
         print(
-            "🚀 Leader arm driving REAL SO100 follower. Enable robot in GUI, then move leader. Ctrl+C to exit."
+            "🚀 Leader arm driving REAL SO101 follower. Enable robot in GUI, then move leader. Ctrl+C to exit."
         )
     else:
-        print("🚀 Leader arm driving SO100 URDF. Move the leader arm. Ctrl+C to exit.")
+        print("🚀 Leader arm driving SO101 URDF. Move the leader arm. Ctrl+C to exit.")
     print()
 
     dt_viz = 1.0 / VISUALIZATION_RATE
@@ -222,7 +222,7 @@ def main() -> None:
                     robot_enabled=(robot_activity_state == RobotActivityState.ENABLED),
                 )
             else:
-                visualizer.update_robot_status("URDF only – SO100 leader driving")
+                visualizer.update_robot_status("URDF only – SO101 leader driving")
                 visualizer.update_ghost_robot_visibility(False)
                 visualizer.update_gripper_status(trigger_value, robot_enabled=True)
 

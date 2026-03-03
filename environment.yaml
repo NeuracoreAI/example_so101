@@ -1,5 +1,5 @@
-# SO100 teleop environment. Install LeRobot with feetech separately: pip install -e ".[feetech]" (from lerobot repo).
-name: so100-teleop
+# SO101 teleop environment. Install LeRobot with feetech separately: pip install -e ".[feetech]" (from lerobot repo).
+name: so101-teleop
 channels:
   - defaults
 dependencies:

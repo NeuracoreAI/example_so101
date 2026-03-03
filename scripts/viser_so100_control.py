@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
-"""SO100 URDF in Viser with sliders; control the real robot from slider values.
+"""SO101 URDF in Viser with sliders; control the real robot from slider values.
 
-Loads the SO100 URDF in Viser (like datasets_previewer/urdf_visualiser.py) and
-drives the real SO100 follower arm from the same joint angles. Use the sliders
+Loads the SO101 URDF in Viser (like datasets_previewer/urdf_visualiser.py) and
+drives the real SO101 follower arm from the same joint angles. Use the sliders
 to move both the 3D preview and the physical robot (when --real-robot and
 robot is enabled).
 
 Requirements:
 - pip/conda: viser, yourdfpy, scipy; lerobot with [feetech]
-- Real robot: SO100 follower on USB (e.g. /dev/ttyUSB0), motors set up.
+- Real robot: SO101 follower on USB (e.g. /dev/ttyUSB0), motors set up.
 
 Usage:
-  cd example_lerobot_so100/examples
-  python viser_so100_control.py
-  python viser_so100_control.py --real-robot --follower-port /dev/ttyUSB0 --follower-id my_awesome_follower_arm
+  cd example_lerobot_so101/examples
+  python viser_so101_control.py
+  python viser_so101_control.py --real-robot --follower-port /dev/ttyUSB0 --follower-id my_awesome_follower_arm
 
   Open http://localhost:8080, move sliders. Enable robot and use Home/Sync as needed. Ctrl+C to exit.
 """
@@ -38,7 +38,7 @@ _examples = _root / "examples"
 sys.path.insert(0, str(_root))
 sys.path.insert(0, str(_examples))
 
-# SO100 controller order (degrees): shoulder_pan, shoulder_lift, elbow_flex, wrist_flex, wrist_roll
+# SO101 controller order (degrees): shoulder_pan, shoulder_lift, elbow_flex, wrist_flex, wrist_roll
 CONTROLLER_JOINT_NAMES = [
     "shoulder_pan",
     "shoulder_lift",
@@ -88,7 +88,7 @@ def _transform_to_position_wxyz(
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="SO100 URDF in Viser; control real robot from sliders."
+        description="SO101 URDF in Viser; control real robot from sliders."
     )
     parser.add_argument("--port", type=int, default=8080, help="Viser server port")
 
@@ -102,7 +102,7 @@ def main() -> None:
     parser.add_argument(
         "--real-robot",
         action="store_true",
-        help="Connect to real SO100 follower and send slider values to it.",
+        help="Connect to real SO101 follower and send slider values to it.",
     )
     parser.add_argument("--follower-port", type=str, default="/dev/ttyUSB0")
     parser.add_argument("--follower-id", type=str, default="my_awesome_follower_arm")
@@ -110,7 +110,7 @@ def main() -> None:
 
 
     print("=" * 60)
-    print("SO100 VISER CONTROL")
+    print("SO101 VISER CONTROL")
     print("=" * 60)
     print(f"URDF: {URDF_PATH}")
     print(f"Real robot: {args.real_robot}")
@@ -164,12 +164,12 @@ def main() -> None:
     # Robot controller (optional)
     robot_controller = None
     if args.real_robot:
-        from so100_controller import SO100Controller
+        from so101_controller import SO101Controller
 
         from common.configs import NEUTRAL_JOINT_ANGLES
 
-        print("🤖 Connecting to SO100 follower...")
-        robot_controller = SO100Controller(
+        print("🤖 Connecting to SO101 follower...")
+        robot_controller = SO101Controller(
             port=args.follower_port,
             follower_id=args.follower_id,
             robot_rate=100.0,

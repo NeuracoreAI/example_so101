@@ -1,7 +1,7 @@
 """Leader arm controller thread – reads leader arm and updates DataManager.
 
 Mirrors the Meta Quest controller thread pattern: runs at a fixed rate, reads
-the teleop device (SO100 leader arm), and writes mapped joint angles and gripper
+the teleop device (SO101 leader arm), and writes mapped joint angles and gripper
 into DataManager for use by the robot control and teleop loop.
 """
 
@@ -10,12 +10,12 @@ import traceback
 
 from common.configs import CONTROLLER_DATA_RATE
 from common.data_manager import DataManager
-from common.leader_arm import LerobotSO100LeaderArm
+from common.leader_arm import LerobotSO101LeaderArm
 
 
 def leader_arm_controller_thread(
     data_manager: DataManager,
-    leader_arm: LerobotSO100LeaderArm,
+    leader_arm: LerobotSO101LeaderArm,
     rate_hz: float | None = None,
 ) -> None:
     """Leader arm controller thread – reads leader and updates DataManager.
@@ -27,7 +27,7 @@ def leader_arm_controller_thread(
 
     Args:
         data_manager: DataManager for thread-safe state.
-        leader_arm: Connected LerobotSO100LeaderArm instance.
+        leader_arm: Connected LerobotSO101LeaderArm instance.
         rate_hz: Read rate in Hz; defaults to CONTROLLER_DATA_RATE.
     """
     dt = 1.0 / (rate_hz if rate_hz is not None else CONTROLLER_DATA_RATE)
