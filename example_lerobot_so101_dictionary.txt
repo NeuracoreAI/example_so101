@@ -1,7 +1,7 @@
-SO100
-SO100Follower
-SO100Leader
-so100
+SO101
+SO101Follower
+SO101Leader
+so101
 lerobot
 Lerobot
 LEROBOT

@@ -7,7 +7,7 @@ Raw actions are still available via read() for debugging.
 """
 
 import numpy as np
-from lerobot.teleoperators.so_leader import SO100Leader, SO100LeaderConfig
+from lerobot.teleoperators.so_leader import SO101Leader, SO101LeaderConfig
 
 # Fixed S0100 leader arm parameters (do not change per follower).
 JOINT_ACTION_KEYS = [
@@ -22,7 +22,7 @@ NUM_JOINTS = 5
 USE_DEGREES = True
 
 
-class LerobotSO100LeaderArm:
+class LerobotSO101LeaderArm:
     """LeRobot S0100 leader arm: read raw or mapped to a configured follower."""
 
     def __init__(self, port: str, calibration_id: str) -> None:
@@ -32,12 +32,12 @@ class LerobotSO100LeaderArm:
             port: Serial port (e.g. /dev/ttyACM0).
             calibration_id: Id used when calibrating (lerobot-calibrate --teleop.id=...).
         """
-        self._config = SO100LeaderConfig(
+        self._config = SO101LeaderConfig(
             port=port,
             id=calibration_id,
             use_degrees=USE_DEGREES,
         )
-        self._leader = SO100Leader(self._config)
+        self._leader = SO101Leader(self._config)
         self._follower_limits_deg: np.ndarray | None = None
         self._follower_offsets_deg: np.ndarray | None = None
         self._follower_directions: np.ndarray | None = None

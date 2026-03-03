@@ -1,10 +1,10 @@
-"""Configuration parameters for SO100 robot demos."""
+"""Configuration parameters for SO101 robot demos."""
 
 from pathlib import Path
 
 import numpy as np
 
-# SO100 URDF: so100_minimal.urdf is a placeholder; replace with so100.urdf from SO-ARM100 for accurate mesh (see so101_description/urdf/README.md)
+# SO101 URDF: so101_minimal.urdf is a placeholder; replace with so101.urdf from SO-ARM100 for accurate mesh (see so101_description/urdf/README.md)
 URDF_PATH = str(
     Path(__file__).parent.parent.parent
     / "so101_description"
@@ -47,7 +47,7 @@ CAMERA_DEVICE_INDEX = 1  # 0 = first camera, 1 = second, etc.
 CAMERA_WIDTH = 640
 CAMERA_HEIGHT = 480
 
-# SO100 neutral pose (degrees): 5 body joints [shoulder_pan, shoulder_lift, elbow_flex, wrist_flex, wrist_roll]
+# SO101 neutral pose (degrees): 5 body joints [shoulder_pan, shoulder_lift, elbow_flex, wrist_flex, wrist_roll]
 NEUTRAL_JOINT_ANGLES = [0.0, 90.0, -90.0, 0.0, 0.0]
 
 # Posture task cost vector (one weight per joint)
@@ -61,7 +61,7 @@ TARGETING_POSE_TIME_THRESHOLD = 1.0
 
 GRIPPER_LOGGING_NAME = "gripper"
 CAMERA_LOGGING_NAME = "rgb"
-# SO100: 5 body joints (same order as LeRobot so_follower)
+# SO101: 5 body joints (same order as LeRobot so_follower)
 JOINT_NAMES = [
     "shoulder_pan",
     "shoulder_lift",
@@ -74,9 +74,9 @@ JOINT_NAMES = [
     "gripper",
 ]
 
-# Leader arm → SO100 follower mapping (used by leader_arm_controller and teleop examples)
-# SO100 follower: 5 body joints. Leader 5 DOF + gripper → Follower 5 DOF + gripper (1:1).
-SO100_JOINT_LIMITS_DEG = np.array(
+# Leader arm → SO101 follower mapping (used by leader_arm_controller and teleop examples)
+# SO101 follower: 5 body joints. Leader 5 DOF + gripper → Follower 5 DOF + gripper (1:1).
+SO101_JOINT_LIMITS_DEG = np.array(
     [
         (-150.0, 150.0),
         (-180.0, 180.0),
@@ -86,11 +86,11 @@ SO100_JOINT_LIMITS_DEG = np.array(
     ],
     dtype=np.float64,
 )
-SO100_OFFSETS_DEG = np.array([0.0, 0.0, 0.0, 0.0, 0.0], dtype=np.float64)
-SO100_DIRECTIONS = np.array([1.0, 1.0, 1.0, 1.0, 1.0], dtype=np.float64)
+SO101_OFFSETS_DEG = np.array([0.0, 0.0, 0.0, 0.0, 0.0], dtype=np.float64)
+SO101_DIRECTIONS = np.array([1.0, 1.0, 1.0, 1.0, 1.0], dtype=np.float64)
 # Leader joint index -> Follower joint index (1:1)
-LEADER_TO_SO100_JOINT = {0: 0, 1: 1, 2: 2, 3: 3, 4: 4}
-SO100_FIXED_JOINTS: dict = {}  # none
+LEADER_TO_SO101_JOINT = {0: 0, 1: 1, 2: 2, 3: 3, 4: 4}
+SO101_FIXED_JOINTS: dict = {}  # none
 
 # robot.urdf actuated joint order (yourdfpy): gripper, wrist_roll, wrist_flex, elbow_flex, shoulder_lift, shoulder_pan
 # Our order: shoulder_pan, shoulder_lift, elbow_flex, wrist_flex, wrist_roll, gripper -> index [0..5]

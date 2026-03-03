@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""SO100 follower arm controller using LeRobot SO100Follower.
+"""SO101 follower arm controller using LeRobot SO101Follower.
 
-Controls the physical SO100 (SO-ARM100) follower arm over USB via the
+Controls the physical SO101 (SO-ARM100) follower arm over USB via the
 Feetech bus. Joint angles are in degrees; gripper is 0–1 (open).
-No AgileX or Piper references; SO100 only.
+No AgileX or Piper references; SO101 only.
 """
 
 import threading
@@ -12,24 +12,24 @@ from typing import Any
 
 import numpy as np
 
-# LeRobot SO100 follower (requires: pip install -e ".[feetech]" in lerobot)
-from lerobot.robots.so_follower import SO100Follower, SO100FollowerConfig
+# LeRobot SO101 follower (requires: pip install -e ".[feetech]" in lerobot)
+from lerobot.robots.so_follower import SO101Follower, SO101FollowerConfig
 
 
-# SO100 motor keys in order: 5 body joints + gripper
-SO100_JOINT_KEYS = [
+# SO101 motor keys in order: 5 body joints + gripper
+SO101_JOINT_KEYS = [
     "shoulder_pan.pos",
     "shoulder_lift.pos",
     "elbow_flex.pos",
     "wrist_flex.pos",
     "wrist_roll.pos",
 ]
-SO100_GRIPPER_KEY = "gripper.pos"
+SO101_GRIPPER_KEY = "gripper.pos"
 NUM_BODY_JOINTS = 5
 
 
-class SO100Controller:
-    """Controller for the SO100 follower arm (LeRobot SO-100 / SO-ARM100).
+class SO101Controller:
+    """Controller for the SO101 follower arm (LeRobot SO-100 / SO-ARM100).
 
     Presents the same logical interface as the previous robot controller:
     joint angles in degrees (5 body joints), gripper 0–1, enable/disable,
@@ -44,10 +44,10 @@ class SO100Controller:
         neutral_joint_angles: np.ndarray | None = None,
         debug_mode: bool = False,
     ) -> None:
-        """Initialize the SO100 controller (does not connect yet).
+        """Initialize the SO101 controller (does not connect yet).
 
         Args:
-            port: Serial port for the SO100 follower (e.g. /dev/ttyACM0 or /dev/ttyUSB0).
+            port: Serial port for the SO101 follower (e.g. /dev/ttyACM0 or /dev/ttyUSB0).
             follower_id: Calibration id used for this follower (lerobot-setup-motors / calibration).
             robot_rate: Control loop rate in Hz.
             neutral_joint_angles: Home position [j1..j5] in degrees (default zeros).
@@ -58,13 +58,13 @@ class SO100Controller:
         self.robot_rate = robot_rate
         self.debug_mode = debug_mode
 
-        self._config = SO100FollowerConfig(
+        self._config = SO101FollowerConfig(
             port=port,
             id=follower_id,
             use_degrees=True,
             cameras={},  # no cameras required for teleop
         )
-        self._robot: SO100Follower | None = None
+        self._robot: SO101Follower | None = None
 
         self.position_lock = threading.Lock()
         self.state_lock = threading.Lock()
@@ -79,7 +79,7 @@ class SO100Controller:
         else:
             self.HOME_JOINT_ANGLES = np.zeros(NUM_BODY_JOINTS, dtype=np.float64)
 
-        # Gripper: 0 = closed, 1 = open (normalized). SO100 uses 0–100 in action.
+        # Gripper: 0 = closed, 1 = open (normalized). SO101 uses 0–100 in action.
         self._target_joint_angles = self.HOME_JOINT_ANGLES.copy()
         self._gripper_open_value = 0.5  # 0–1
 
@@ -102,11 +102,11 @@ class SO100Controller:
         self._connect()
 
     def _connect(self) -> None:
-        """Connect to the SO100 follower arm."""
-        print(f"Connecting to SO100 follower on {self.port} (id={self.follower_id})...")
-        self._robot = SO100Follower(self._config)
+        """Connect to the SO101 follower arm."""
+        print(f"Connecting to SO101 follower on {self.port} (id={self.follower_id})...")
+        self._robot = SO101Follower(self._config)
         self._robot.connect(calibrate=False)
-        print("✓ SO100 follower connected")
+        print("✓ SO101 follower connected")
 
     def start_control_loop(self) -> None:
         """Start the control loop thread."""
@@ -126,20 +126,20 @@ class SO100Controller:
 
     def cleanup(self) -> None:
         """Disconnect and release resources."""
-        print("🧹 Cleaning up SO100 controller...")
+        print("🧹 Cleaning up SO101 controller...")
         self.stop_control_loop()
         self._set_robot_enabled(False)
         if self._robot is not None and self._robot.is_connected:
             self._robot.disconnect()
-            print("✓ SO100 follower disconnected")
+            print("✓ SO101 follower disconnected")
         self._robot = None
-        print("✓ SO100 controller cleanup completed")
+        print("✓ SO101 controller cleanup completed")
 
     def _set_robot_enabled(self, enabled: bool) -> None:
         with self.state_lock:
             self._robot_enabled = enabled
             if self.debug_mode:
-                print(f"SO100 enabled: {enabled}")
+                print(f"SO101 enabled: {enabled}")
 
     def is_robot_enabled(self) -> bool:
         with self.state_lock:
@@ -182,7 +182,7 @@ class SO100Controller:
             with self._bus_lock:
                 obs = self._robot.get_observation()
             angles = np.array(
-                [obs[k] for k in SO100_JOINT_KEYS if k in obs],
+                [obs[k] for k in SO101_JOINT_KEYS if k in obs],
                 dtype=np.float64,
             )
             if angles.size >= NUM_BODY_JOINTS:
@@ -200,7 +200,7 @@ class SO100Controller:
         try:
             with self._bus_lock:
                 obs = self._robot.get_observation()
-            raw = obs.get(SO100_GRIPPER_KEY, 50.0)
+            raw = obs.get(SO101_GRIPPER_KEY, 50.0)
             return float(np.clip(raw / 100.0, 0.0, 1.0))
         except Exception as e:
             if self.debug_mode:
@@ -213,9 +213,9 @@ class SO100Controller:
             j = self._target_joint_angles
             g = self._gripper_open_value * 100.0
         action = {}
-        for i, key in enumerate(SO100_JOINT_KEYS):
+        for i, key in enumerate(SO101_JOINT_KEYS):
             action[key] = float(j[i])
-        action[SO100_GRIPPER_KEY] = float(g)
+        action[SO101_GRIPPER_KEY] = float(g)
         return action
 
     def _control_loop(self) -> None:
@@ -229,7 +229,7 @@ class SO100Controller:
                         self._robot.send_action(action)
                 time.sleep(period)
             except Exception as e:
-                print(f"SO100 control loop error: {e}")
+                print(f"SO101 control loop error: {e}")
                 time.sleep(0.01)
 
     def move_to_home(self) -> bool:
@@ -246,7 +246,7 @@ class SO100Controller:
     def graceful_stop(self) -> bool:
         """Stop sending commands and mark robot disabled."""
         try:
-            print("🛑 Graceful stop – disabling SO100 command stream")
+            print("🛑 Graceful stop – disabling SO101 command stream")
             self._set_robot_enabled(False)
             return True
         except Exception as e:
@@ -266,7 +266,7 @@ class SO100Controller:
             g = self.get_current_gripper_open_value()
             if g is not None:
                 self.set_gripper_open_value(g)
-            print("✓ SO100 resumed")
+            print("✓ SO101 resumed")
             return True
         except Exception as e:
             print(f"✗ Resume error: {e}")

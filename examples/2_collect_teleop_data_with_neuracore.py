@@ -1,11 +1,6 @@
 #!/usr/bin/env python3
-"""SO100 leader arm → SO100 follower teleop with Neuracore data collection.
+"""SO101 leader arm → SO101 follower teleop with Neuracore data collection.
 
-This demo:
-- Uses a LeRobot SO100 leader arm as the teleoperation device
-- Optionally drives a real SO100 follower arm (via `SO100Controller`)
-- Streams RGB frames from a simple USB webcam (OpenCV-based `camera_thread`)
-- Logs joint states, joint targets, gripper states, and RGB images to Neuracore
 """
 
 import argparse
@@ -20,7 +15,7 @@ from typing import Any
 import neuracore as nc
 import numpy as np
 
-# Repo root for so100_controller; examples for common.*
+# Repo root for so101_controller; examples for common.*
 _root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_root))
 sys.path.insert(0, str(_root / "examples"))
@@ -34,21 +29,21 @@ from common.configs import (  # type: ignore  # noqa: E402
     CONTROLLER_MIN_CUTOFF,
     GRIPPER_LOGGING_NAME,
     JOINT_NAMES,
-    LEADER_TO_SO100_JOINT,
+    LEADER_TO_SO101_JOINT,
     NEUTRAL_JOINT_ANGLES,
     ROBOT_RATE,
-    SO100_DIRECTIONS,
-    SO100_FIXED_JOINTS,
-    SO100_JOINT_LIMITS_DEG,
-    SO100_OFFSETS_DEG,
+    SO101_DIRECTIONS,
+    SO101_FIXED_JOINTS,
+    SO101_JOINT_LIMITS_DEG,
+    SO101_OFFSETS_DEG,
     URDF_PATH,
 )
 from common.data_manager import DataManager, RobotActivityState  # type: ignore  # noqa: E402
-from common.leader_arm import LerobotSO100LeaderArm  # type: ignore  # noqa: E402
+from common.leader_arm import LerobotSO101LeaderArm  # type: ignore  # noqa: E402
 from common.threads.camera import camera_thread  # type: ignore  # noqa: E402
 from common.threads.joint_state import joint_state_thread  # type: ignore  # noqa: E402
 from common.threads.leader_arm_controller import leader_arm_controller_thread  # type: ignore  # noqa: E402
-from so100_controller import SO100Controller  # type: ignore  # noqa: E402
+from so101_controller import SO101Controller  # type: ignore  # noqa: E402
 
 
 def log_to_neuracore_on_change_callback(
@@ -98,7 +93,7 @@ def _teleop_loop(
 ) -> None:
     """Map leader-mapped state into follower targets and controller fields.
 
-    This mirrors the leader → follower mapping behavior in X_leader_arm_teleop_so100,
+    This mirrors the leader → follower mapping behavior in X_leader_arm_teleop_so101,
     but without visualization or IK. Joint_state_thread handles sending commands
     to the real robot when enabled.
     """
@@ -110,7 +105,7 @@ def _teleop_loop(
 
             mapped_angles, mapped_gripper = data_manager.get_leader_mapped_state()
             if mapped_angles is not None and mapped_gripper is not None:
-                # Target joints in degrees (SO100 controller convention)
+                # Target joints in degrees (SO101 controller convention)
                 # For Neuracore visualization, we also append a pseudo "gripper joint"
                 # to the target vector so arm + gripper can be shown together.
                 pseudo_gripper_deg = float(np.clip(mapped_gripper, 0.0, 1.0) * 100.0)
@@ -148,20 +143,15 @@ def _teleop_loop(
 
 
 def main() -> None:
-    """Run SO100 leader → SO100 follower teleop with Neuracore logging."""
+    """Run SO101 leader → SO101 follower teleop with Neuracore logging."""
     multiprocessing.set_start_method("spawn", force=True)
 
     parser = argparse.ArgumentParser(
-        description="SO100 leader → SO100 follower teleop with Neuracore data collection.",
+        description="SO101 leader → SO101 follower teleop with Neuracore data collection.",
     )
     parser.add_argument("--leader-port", type=str, default="/dev/ttyACM0")
     parser.add_argument("--leader-id", type=str, default="my_awesome_leader_arm")
     parser.add_argument("--leader-rate", type=float, default=50.0)
-    parser.add_argument(
-        "--real-robot",
-        action="store_true",
-        help="Drive the real SO100 follower arm (default: URDF-only logging).",
-    )
     parser.add_argument("--follower-port", type=str, default="/dev/ttyUSB0")
     parser.add_argument("--follower-id", type=str, default="my_awesome_follower_arm")
     parser.add_argument(
@@ -172,13 +162,11 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    use_real_robot = args.real_robot
+    # This example always uses the real SO101 follower robot.
+    use_real_robot = True
 
     print("=" * 60)
-    print(
-        "SO100 LEADER → SO100 FOLLOWER TELEOP WITH NEURACORE"
-        + (" – REAL ROBOT" if use_real_robot else " – URDF only")
-    )
+    print("SO101 LEADER → SO101 FOLLOWER TELEOP WITH NEURACORE")
     print("=" * 60)
     print("Thread frequencies:")
     print(f"  🦾 Leader Reader:    {args.leader_rate:.1f} Hz")
@@ -192,19 +180,19 @@ def main() -> None:
     print("\n🔧 Initializing Neuracore...")
     nc.login()
     nc.connect_robot(
-        robot_name="LeRobot SO100",
+        robot_name="LeRobot SO101",
         urdf_path=str(URDF_PATH),
         overwrite=True,
     )
 
     # Create dataset
     dataset_name = (
-        args.dataset_name or f"so100-teleop-data-{time.strftime('%Y-%m-%d-%H-%M-%S')}"
+        args.dataset_name or f"so101-teleop-data-{time.strftime('%Y-%m-%d-%H-%M-%S')}"
     )
     print(f"\n🔧 Creating dataset {dataset_name}...")
     nc.create_dataset(
         name=dataset_name,
-        description="Teleop data collection for SO100 follower using LeRobot SO100 leader arm.",
+        description="Teleop data collection for SO101 follower using LeRobot SO101 leader arm.",
     )
 
     # Initialize shared state
@@ -217,17 +205,17 @@ def main() -> None:
     )
 
     # Initialize leader arm and follower mapping
-    print("\n🦾 Initializing SO100 leader arm...")
-    leader = LerobotSO100LeaderArm(
+    print("\n🦾 Initializing SO101 leader arm...")
+    leader = LerobotSO101LeaderArm(
         port=args.leader_port,
         calibration_id=args.leader_id,
     )
     leader.configure_follower(
-        follower_limits_deg=SO100_JOINT_LIMITS_DEG,
-        follower_offsets_deg=SO100_OFFSETS_DEG,
-        follower_directions=SO100_DIRECTIONS,
-        leader_to_follower_joint=LEADER_TO_SO100_JOINT,
-        fixed_joints=SO100_FIXED_JOINTS,
+        follower_limits_deg=SO101_JOINT_LIMITS_DEG,
+        follower_offsets_deg=SO101_OFFSETS_DEG,
+        follower_directions=SO101_DIRECTIONS,
+        leader_to_follower_joint=LEADER_TO_SO101_JOINT,
+        fixed_joints=SO101_FIXED_JOINTS,
     )
     try:
         leader.connect(calibrate=False)
@@ -235,19 +223,19 @@ def main() -> None:
         print(f"✗ Failed to connect to leader arm: {e}")
         if "no calibration registered" in str(e).lower():
             print(
-                "Run: lerobot-calibrate --teleop.type=so100_leader "
+                "Run: lerobot-calibrate --teleop.type=so101_leader "
                 "--teleop.port=... --teleop.id=..."
             )
         raise SystemExit(1) from e
     print("✓ Leader arm connected")
 
-    robot_controller: SO100Controller | None = None
+    robot_controller: SO101Controller | None = None
     joint_state_thread_obj: threading.Thread | None = None
 
     # Initialize follower controller (optional)
     if use_real_robot:
-        print("\n🤖 Initializing SO100 follower controller...")
-        robot_controller = SO100Controller(
+        print("\n🤖 Initializing SO101 follower controller...")
+        robot_controller = SO101Controller(
             port=args.follower_port,
             follower_id=args.follower_id,
             robot_rate=ROBOT_RATE,
@@ -265,7 +253,7 @@ def main() -> None:
         # Enable robot activity state and resume controller
         data_manager.set_robot_activity_state(RobotActivityState.ENABLED)
         if not robot_controller.resume_robot():
-            print("⚠️  Failed to resume SO100 robot; commands will not be sent.")
+            print("⚠️  Failed to resume SO101 robot; commands will not be sent.")
 
     # Start leader arm controller thread (same pattern as Meta Quest controller thread)
     print("\n🎮 Starting leader arm controller thread...")
@@ -296,11 +284,8 @@ def main() -> None:
 
     print()
     print("🚀 Starting teleoperation with Neuracore data collection...")
-    print("   - Move the SO100 leader arm to drive the follower.")
-    if use_real_robot:
-        print("   - The real SO100 follower is being commanded.")
-    else:
-        print("   - No real robot: only leader, camera, and Neuracore logging are active.")
+    print("   - Move the SO101 leader arm to drive the follower.")
+    print("   - The real SO101 follower is being commanded.")
     print("   - Recording is controlled via Neuracore; this script attempts to auto-start.")
     print("⚠️  Press Ctrl+C to exit")
     print()

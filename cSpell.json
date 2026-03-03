@@ -11,13 +11,13 @@
     ],
     "dictionaryDefinitions": [
         {
-            "name": "example-lerobot-so100-dictionary",
-            "path": "./example_lerobot_so100_dictionary.txt",
+            "name": "example-lerobot-so101-dictionary",
+            "path": "./example_lerobot_so101_dictionary.txt",
             "addWords": true
         }
     ],
     "language": "en,en-GB",
     "dictionaries": [
-        "example-lerobot-so100-dictionary"
+        "example-lerobot-so101-dictionary"
     ]
 }

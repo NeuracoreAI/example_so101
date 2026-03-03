@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Minimal script to test the USB camera thread used in the SO100 examples.
+"""Minimal script to test the USB camera thread used in the SO101 examples.
 
 This script:
 - Sets up the same Python path layout as the other examples
@@ -24,7 +24,7 @@ from common.configs import CAMERA_FRAME_STREAMING_RATE  # type: ignore  # noqa: 
 from common.data_manager import DataManager  # type: ignore  # noqa: E402
 from common.threads.camera import camera_thread  # type: ignore  # noqa: E402
 
-WINDOW_NAME = "SO100 camera test"
+WINDOW_NAME = "SO101 camera test"
 
 
 def _on_change(name: str, value: Any, timestamp: float) -> None:
@@ -41,7 +41,7 @@ def main() -> None:
     data_manager.set_on_change_callback(_on_change)
 
     print("=" * 60)
-    print("SO100 CAMERA THREAD TEST")
+    print("SO101 CAMERA THREAD TEST")
     print("=" * 60)
     print(f"Target frame rate: {CAMERA_FRAME_STREAMING_RATE} Hz")
     print("Opening USB webcam using common.threads.camera.camera_thread...")
