@@ -1,0 +1,227 @@
+"""Policy state - policy prediction, policy action, policy action index."""
+
+import threading
+from enum import Enum
+
+import numpy as np
+
+
+class PolicyState:
+    """Policy state - policy prediction, policy action, policy action index."""
+
+    class ExecutionMode(Enum):
+        """Execution mode enumeration."""
+
+        TARGETING_TIME = "targeting_time"
+        TARGETING_POSE = "targeting_pose"
+
+    def __init__(self) -> None:
+        """Initialize PolicyState with default values."""
+        # Prediction horizon stored as dict[str, list[float]] where keys are joint/gripper names
+        self._prediction_horizon: dict[str, list[float]] = {}
+        self._prediction_horizon_lock = threading.Lock()
+        self._execution_ratio: float = 1.0
+
+        self._policy_rgb_image_input: np.ndarray | None = None
+        self._policy_rgb_image_input_lock = threading.Lock()
+
+        self._policy_state_input: np.ndarray | None = None
+        self._policy_state_input_lock = threading.Lock()
+
+        self._ghost_robot_playing: bool = False
+        self._ghost_action_index: int = 0
+
+        # Policy execution state
+        self._policy_inputs_locked: bool = False
+        self._locked_prediction_horizon: dict[str, list[float]] = {}
+        self._execution_action_index: int = 0
+        self._execution_lock = threading.Lock()
+
+        # Continuous play and execution mode
+        self._continuous_play_active: bool = False
+        self._execution_mode: PolicyState.ExecutionMode = (
+            PolicyState.ExecutionMode.TARGETING_TIME
+        )
+
+    def get_prediction_horizon_length(self) -> int:
+        """Get prediction horizon length (thread-safe)."""
+        with self._prediction_horizon_lock:
+            if not self._prediction_horizon:
+                return 0
+            # Get length from first list (all should have same length)
+            first_key = next(iter(self._prediction_horizon.keys()))
+            return len(self._prediction_horizon[first_key])
+
+    def get_prediction_horizon(self) -> dict[str, list[float]]:
+        """Get prediction horizon (thread-safe)."""
+        with self._prediction_horizon_lock:
+            # Return a deep copy to prevent external modifications
+            return {
+                key: list(values) for key, values in self._prediction_horizon.items()
+            }
+
+    def set_prediction_horizon(self, horizon: dict[str, list[float]]) -> None:
+        """Set prediction horizon (thread-safe)."""
+        with self._prediction_horizon_lock:
+            # Store a deep copy to prevent external modifications
+            self._prediction_horizon = {
+                key: list(values) for key, values in horizon.items()
+            }
+
+    def set_execution_ratio(self, ratio: float) -> None:
+        """Set execution ratio used when locking prediction horizon."""
+        # Clamp to (0, 1] to avoid zero-length horizons
+        clamped_ratio = float(np.clip(ratio, 1e-6, 1.0))
+        with self._prediction_horizon_lock:
+            self._execution_ratio = clamped_ratio
+
+    def get_execution_ratio(self) -> float:
+        """Get execution ratio (thread-safe)."""
+        with self._prediction_horizon_lock:
+            return self._execution_ratio
+
+    def get_policy_rgb_image_input(self) -> np.ndarray | None:
+        """Get policy RGB image (thread-safe)."""
+        with self._policy_rgb_image_input_lock:
+            return (
+                self._policy_rgb_image_input.copy()
+                if self._policy_rgb_image_input is not None
+                else None
+            )
+
+    def set_policy_rgb_image_input(self, image: np.ndarray) -> None:
+        """Set policy RGB image (thread-safe).
+
+        Raises:
+            RuntimeError: If policy inputs are locked (during execution).
+        """
+        with self._execution_lock:
+            if self._policy_inputs_locked:
+                raise RuntimeError("Policy inputs are locked during execution")
+        with self._policy_rgb_image_input_lock:
+            self._policy_rgb_image_input = image.copy() if image is not None else None
+
+    def get_policy_state_input(self) -> np.ndarray | None:
+        """Get policy state input (thread-safe)."""
+        with self._policy_state_input_lock:
+            return (
+                self._policy_state_input.copy()
+                if self._policy_state_input is not None
+                else None
+            )
+
+    def set_policy_state_input(self, input: np.ndarray) -> None:
+        """Set policy state input (thread-safe).
+
+        Raises:
+            RuntimeError: If policy inputs are locked (during execution).
+        """
+        with self._execution_lock:
+            if self._policy_inputs_locked:
+                raise RuntimeError("Policy inputs are locked during execution")
+        with self._policy_state_input_lock:
+            self._policy_state_input = input.copy() if input is not None else None
+
+    def get_ghost_robot_playing(self) -> bool:
+        """Get ghost robot playing (thread-safe)."""
+        return self._ghost_robot_playing
+
+    def set_ghost_robot_playing(self, playing: bool) -> None:
+        """Set ghost robot playing (thread-safe)."""
+        self._ghost_robot_playing = playing
+
+    def get_ghost_action_index(self) -> int:
+        """Get ghost action index (thread-safe)."""
+        return self._ghost_action_index
+
+    def set_ghost_action_index(self, index: int) -> None:
+        """Set ghost action index (thread-safe)."""
+        self._ghost_action_index = index
+
+    def reset_ghost_action_index(self) -> None:
+        """Reset ghost action index (thread-safe)."""
+        self._ghost_action_index = 0
+
+    # Policy execution methods
+    def start_policy_execution(self) -> None:
+        """Start policy execution by locking inputs and storing horizon (thread-safe)."""
+        with self._prediction_horizon_lock:
+            source_horizon = {
+                key: list(values) for key, values in self._prediction_horizon.items()
+            }
+            # Calculate length directly from source_horizon instead of calling get_prediction_horizon_length()
+            # which would try to acquire the same lock again (deadlock!)
+            if not source_horizon:
+                total = 0
+            else:
+                first_key = next(iter(source_horizon.keys()))
+                total = len(source_horizon[first_key])
+
+            if total == 0:
+                locked_horizon = {}
+            else:
+                num_actions = int(total * self._execution_ratio)
+                num_actions = max(1, min(num_actions, total))
+                # Slice each list in the horizon
+                locked_horizon = {
+                    key: values[:num_actions] for key, values in source_horizon.items()
+                }
+        with self._execution_lock:
+            self._policy_inputs_locked = True
+            self._execution_action_index = 0
+            self._locked_prediction_horizon = locked_horizon
+
+    def end_policy_execution(self) -> None:
+        """Stop policy execution and unlock inputs (thread-safe)."""
+        with self._execution_lock:
+            self._policy_inputs_locked = False
+            self._locked_prediction_horizon = {}
+            self._execution_action_index = 0
+
+    def get_locked_prediction_horizon(self) -> dict[str, list[float]]:
+        """Get locked prediction horizon (thread-safe)."""
+        with self._execution_lock:
+            # Return a deep copy to prevent external modifications
+            return {
+                key: list(values)
+                for key, values in self._locked_prediction_horizon.items()
+            }
+
+    def get_locked_prediction_horizon_length(self) -> int:
+        """Get locked prediction horizon length (thread-safe)."""
+        with self._execution_lock:
+            if not self._locked_prediction_horizon:
+                return 0
+            # Get length from first list (all should have same length)
+            first_key = next(iter(self._locked_prediction_horizon.keys()))
+            return len(self._locked_prediction_horizon[first_key])
+
+    def get_locked_prediction_horizon_sync_points(self) -> dict[str, list[float]]:
+        """Get locked prediction horizon (legacy method name, calls get_locked_prediction_horizon)."""
+        return self.get_locked_prediction_horizon()
+
+    def get_execution_action_index(self) -> int:
+        """Get current execution action index (thread-safe)."""
+        with self._execution_lock:
+            return self._execution_action_index
+
+    def increment_execution_action_index(self) -> None:
+        """Increment execution action index (thread-safe)."""
+        with self._execution_lock:
+            self._execution_action_index += 1
+
+    def get_continuous_play_active(self) -> bool:
+        """Get continuous play active state (thread-safe)."""
+        return self._continuous_play_active
+
+    def set_continuous_play_active(self, active: bool) -> None:
+        """Set continuous play active state (thread-safe)."""
+        self._continuous_play_active = active
+
+    def get_execution_mode(self) -> ExecutionMode:
+        """Get execution mode (thread-safe)."""
+        return self._execution_mode
+
+    def set_execution_mode(self, mode: ExecutionMode) -> None:
+        """Set execution mode (thread-safe)."""
+        self._execution_mode = mode

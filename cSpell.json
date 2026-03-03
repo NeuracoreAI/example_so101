@@ -1,0 +1,23 @@
+{
+    "ignorePaths": [
+        "cSpell.json",
+        ".*",
+        "*.Dockerfile",
+        "docker-compose.yml",
+        "requirements*.txt",
+        "*.sh",
+        ".pre-commit-config.yaml",
+        ".gitmodules"
+    ],
+    "dictionaryDefinitions": [
+        {
+            "name": "example-lerobot-so100-dictionary",
+            "path": "./example_lerobot_so100_dictionary.txt",
+            "addWords": true
+        }
+    ],
+    "language": "en,en-GB",
+    "dictionaries": [
+        "example-lerobot-so100-dictionary"
+    ]
+}

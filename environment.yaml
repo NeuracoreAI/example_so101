@@ -1,0 +1,15 @@
+# SO100 teleop environment. Install LeRobot with feetech separately: pip install -e ".[feetech]" (from lerobot repo).
+name: so100-teleop
+channels:
+  - defaults
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+      - numpy
+      - scipy
+      - opencv-python
+      - viser
+      - yourdfpy
+      - neuracore
+      - neuracore_types
