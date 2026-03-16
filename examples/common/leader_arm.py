@@ -7,7 +7,7 @@ Raw actions are still available via read() for debugging.
 """
 
 import numpy as np
-from lerobot.teleoperators.so_leader import SO101Leader, SO101LeaderConfig
+from lerobot.teleoperators.so101_leader import SO101Leader, SO101LeaderConfig
 
 # Fixed S0100 leader arm parameters (do not change per follower).
 JOINT_ACTION_KEYS = [
