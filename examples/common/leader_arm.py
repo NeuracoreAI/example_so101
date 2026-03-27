@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""LeRobot S0100 leader arm: connect, read, and map to a configured follower.
+"""LeRobot SO101 leader arm: connect, read, and map to a configured follower.
 
 The class holds follower-specific config (limits, offsets, directions, joint
 mapping) and can output mapped joint angles + gripper for any follower DOF.
@@ -7,9 +7,10 @@ Raw actions are still available via read() for debugging.
 """
 
 import numpy as np
-from lerobot.teleoperators.so_leader import SO101Leader, SO101LeaderConfig
 
-# Fixed S0100 leader arm parameters (do not change per follower).
+from common.sts3215_bus import SO101LeaderDriver
+
+# Fixed SO101 leader arm parameters (do not change per follower).
 JOINT_ACTION_KEYS = [
     "shoulder_pan.pos",
     "shoulder_lift.pos",
@@ -19,11 +20,10 @@ JOINT_ACTION_KEYS = [
 ]
 GRIPPER_ACTION_KEY = "gripper.pos"
 NUM_JOINTS = 5
-USE_DEGREES = True
 
 
 class LerobotSO101LeaderArm:
-    """LeRobot S0100 leader arm: read raw or mapped to a configured follower."""
+    """LeRobot SO101 leader arm: read raw or mapped to a configured follower."""
 
     def __init__(self, port: str, calibration_id: str) -> None:
         """Configure the leader arm (does not connect).
@@ -32,12 +32,7 @@ class LerobotSO101LeaderArm:
             port: Serial port (e.g. /dev/ttyACM0).
             calibration_id: Id used when calibrating (lerobot-calibrate --teleop.id=...).
         """
-        self._config = SO101LeaderConfig(
-            port=port,
-            id=calibration_id,
-            use_degrees=USE_DEGREES,
-        )
-        self._leader = SO101Leader(self._config)
+        self._leader = SO101LeaderDriver(port=port, calibration_id=calibration_id)
         self._follower_limits_deg: np.ndarray | None = None
         self._follower_offsets_deg: np.ndarray | None = None
         self._follower_directions: np.ndarray | None = None
