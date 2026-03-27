@@ -4,8 +4,6 @@ import time
 import traceback
 
 import cv2
-import numpy as np
-
 from common.configs import (
     CAMERA_DEVICE_INDEX,
     CAMERA_FRAME_STREAMING_RATE,
@@ -25,7 +23,9 @@ def camera_thread(data_manager: DataManager) -> None:
     try:
         cap = cv2.VideoCapture(CAMERA_DEVICE_INDEX)
         if not cap.isOpened():
-            print(f"❌ Could not open USB webcam (device index {CAMERA_DEVICE_INDEX}). Check connection and permissions.")
+            print(
+                f"❌ Could not open USB webcam (device index {CAMERA_DEVICE_INDEX}). Check connection and permissions."
+            )
             data_manager.request_shutdown()
             return
 
@@ -35,7 +35,9 @@ def camera_thread(data_manager: DataManager) -> None:
         # Read back actual resolution (some webcams don't support requested size)
         actual_w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         actual_h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        print(f"  Webcam opened: {actual_w}x{actual_h} @ ~{CAMERA_FRAME_STREAMING_RATE} Hz")
+        print(
+            f"  Webcam opened: {actual_w}x{actual_h} @ ~{CAMERA_FRAME_STREAMING_RATE} Hz"
+        )
 
         while not data_manager.is_shutdown_requested():
             iteration_start = time.time()

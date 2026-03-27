@@ -1,20 +1,22 @@
 #!/usr/bin/env python3
-"""SO101 follower arm controller using LeRobot SO101Follower.
+"""SO101 follower arm controller.
 
 Controls the physical SO101 (SO-ARM100) follower arm over USB via the
 Feetech bus. Joint angles are in degrees; gripper is 0–1 (open).
 No AgileX or Piper references; SO101 only.
 """
 
+import sys
 import threading
 import time
+from pathlib import Path
 from typing import Any
 
 import numpy as np
 
-# LeRobot SO101 follower (requires: pip install -e ".[feetech]" in lerobot)
-from lerobot.robots.so_follower import SO101Follower, SO101FollowerConfig
-
+# Make examples/common importable from the repo root
+sys.path.insert(0, str(Path(__file__).resolve().parent / "examples"))
+from common.sts3215_bus import SO101FollowerDriver  # noqa: E402
 
 # SO101 motor keys in order: 5 body joints + gripper
 SO101_JOINT_KEYS = [
@@ -29,7 +31,7 @@ NUM_BODY_JOINTS = 5
 
 
 class SO101Controller:
-    """Controller for the SO101 follower arm (LeRobot SO-100 / SO-ARM100).
+    """Controller for the SO101 follower arm (SO-ARM100).
 
     Presents the same logical interface as the previous robot controller:
     joint angles in degrees (5 body joints), gripper 0–1, enable/disable,
@@ -58,17 +60,13 @@ class SO101Controller:
         self.robot_rate = robot_rate
         self.debug_mode = debug_mode
 
-        self._config = SO101FollowerConfig(
-            port=port,
-            id=follower_id,
-            use_degrees=True,
-            cameras={},  # no cameras required for teleop
-        )
-        self._robot: SO101Follower | None = None
+        self._robot: SO101FollowerDriver | None = None
 
         self.position_lock = threading.Lock()
         self.state_lock = threading.Lock()
-        self._bus_lock = threading.Lock()  # Serialize all serial port access (read/write)
+        self._bus_lock = (
+            threading.Lock()
+        )  # Serialize all serial port access (read/write)
         self.running = threading.Event()
         self.running.set()
 
@@ -104,8 +102,8 @@ class SO101Controller:
     def _connect(self) -> None:
         """Connect to the SO101 follower arm."""
         print(f"Connecting to SO101 follower on {self.port} (id={self.follower_id})...")
-        self._robot = SO101Follower(self._config)
-        self._robot.connect(calibrate=False)
+        self._robot = SO101FollowerDriver(port=self.port, follower_id=self.follower_id)
+        self._robot.connect()
         print("✓ SO101 follower connected")
 
     def start_control_loop(self) -> None:
@@ -122,6 +120,7 @@ class SO101Controller:
             print("Control loop thread is not running")
 
     def __del__(self) -> None:
+        """Best-effort cleanup when the controller is garbage-collected."""
         self.cleanup()
 
     def cleanup(self) -> None:
@@ -142,6 +141,7 @@ class SO101Controller:
                 print(f"SO101 enabled: {enabled}")
 
     def is_robot_enabled(self) -> bool:
+        """Return whether command streaming to the robot is enabled."""
         with self.state_lock:
             return self._robot_enabled
 
@@ -208,7 +208,7 @@ class SO101Controller:
             return None
 
     def _action_from_targets(self) -> dict[str, float]:
-        """Build LeRobot action dict from current targets (keys like shoulder_pan.pos, gripper.pos)."""
+        """Build action dict from current targets (keys like shoulder_pan.pos, gripper.pos)."""
         with self.position_lock:
             j = self._target_joint_angles
             g = self._gripper_open_value * 100.0
@@ -223,7 +223,11 @@ class SO101Controller:
         period = 1.0 / self.robot_rate
         while self.running.is_set():
             try:
-                if self.is_robot_enabled() and self._robot is not None and self._robot.is_connected:
+                if (
+                    self.is_robot_enabled()
+                    and self._robot is not None
+                    and self._robot.is_connected
+                ):
                     action = self._action_from_targets()
                     with self._bus_lock:
                         self._robot.send_action(action)

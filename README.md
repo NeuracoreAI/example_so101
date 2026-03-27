@@ -1,6 +1,6 @@
-# SO101 Leader → SO101 Follower Teleop (LeRobot / SO-ARM100)
+# SO101 Leader → SO101 Follower Teleop (SO-ARM100)
 
-This project is an example of **SO101-to-SO101 teleoperation**: you use one LeRobot SO101 arm as a **leader** and drive either the on-screen SO101 URDF or a second SO101 **follower** arm. Everything in this directory is for the SO101 (SO-ARM100) only; there are no AgileX or Piper references.
+This project is an example of **SO101-to-SO101 teleoperation**: you use one SO101 arm as a **leader** and drive either the on-screen SO101 URDF or a second SO101 **follower** arm. Everything in this directory is for the SO101 (SO-ARM100) only.
 
 ## Prerequisites
 
@@ -19,20 +19,17 @@ conda env create -f environment.yaml
 conda activate so101-teleop
 ```
 
-### 2. Install LeRobot with Feetech support
+### 2. One-time hardware setup with LeRobot CLI tools
 
-The SO101 uses Feetech STS3215 servos. Install LeRobot with the `feetech` extra (from the [lerobot](https://github.com/huggingface/lerobot) repo):
+The teleoperation scripts **do not require lerobot at runtime** — `scservo-sdk` (already in `environment.yaml`) communicates with the motors directly.
+
+However, the `lerobot` CLI tools are still needed **once** to set up motor IDs and calibrate the leader arm. Install lerobot with the feetech extra (from the [lerobot](https://github.com/huggingface/lerobot) repo):
 
 ```bash
 pip install -e ".[feetech]"
 ```
 
-If you use a local clone of lerobot (e.g. in your workspace), install from that path:
-
-```bash
-cd /path/to/lerobot
-pip install -e ".[feetech]"
-```
+You can uninstall it again after calibration is done.
 
 ## Getting your SO101 robot working
 
@@ -52,8 +49,8 @@ pip install -e ".[feetech]"
    ```
    Or set each motor manually; see [LeRobot SO101 docs](https://huggingface.co/docs/lerobot/so101).
 
-3. **Linux**: grant access to the USB port:
-   ```bash
+3. **Linux**: **Please remember to grant access to the USB port**:
+   ```bash 
    sudo chmod 666 /dev/ttyACM0
    ```
    Or add a udev rule so your user can access the device without sudo.
@@ -84,8 +81,8 @@ Use the same `--teleop.id` when running the example (`--leader-id`).
 Drive the SO101 URDF in the GUI with the leader arm:
 
 ```bash
-cd example_lerobot_so101/examples
-python X_leader_arm_teleop_so101.py --leader-port /dev/ttyACM0 --leader-id my_awesome_leader_arm
+cd example_so101/examples
+python 1_leader_arm_teleop_so101.py --leader-port /dev/ttyACM0 --leader-id my_awesome_leader_arm
 ```
 
 ### Real SO101 follower
@@ -93,7 +90,7 @@ python X_leader_arm_teleop_so101.py --leader-port /dev/ttyACM0 --leader-id my_aw
 Drive the physical follower arm with the leader:
 
 ```bash
-python X_leader_arm_teleop_so101.py --real-robot \
+python 1_leader_arm_teleop_so101.py --real-robot \
   --leader-port /dev/ttyACM0 --leader-id my_awesome_leader_arm \
   --follower-port /dev/ttyUSB0 --follower-id my_awesome_follower_arm
 ```
@@ -109,27 +106,62 @@ python X_leader_arm_teleop_so101.py --real-robot \
 - **Joint names**: SO101 uses `shoulder_pan`, `shoulder_lift`, `elbow_flex`, `wrist_flex`, `wrist_roll` (+ gripper).
 - **Camera (USB webcam)**: The camera thread in `examples/common/threads/camera.py` uses OpenCV and a basic USB webcam. In `configs.py` you can set `CAMERA_DEVICE_INDEX` (0 = first camera), `CAMERA_WIDTH`, `CAMERA_HEIGHT`, and `CAMERA_FRAME_STREAMING_RATE`. Start the camera thread from your script if you need RGB frames (e.g. for logging or visualization).
 
+
+### Collect teleop data with Neuracore
+
+Stream and record teleoperation data (joint positions, gripper, RGB camera) to [Neuracore](https://neuracore.ai) for training:
+
+```bash
+python examples/2_collect_teleop_data_with_neuracore.py \
+  --leader-port /dev/ttyACM0 --leader-id my_awesome_leader_arm \
+  --follower-port /dev/ttyACM1 --follower-id my_awesome_follower_arm \
+  --dataset-name so101-demo
+```
+
+**Prerequisites:** A Neuracore account. The script calls `nc.login()` on startup — set your credentials beforehand (see [Neuracore docs](https://neuracore.ai/docs)).
+
+**What it does:**
+- Connects to Neuracore, creates (or reuses) the named dataset, and streams live data.
+- The **real SO101 follower is always active** — the robot is auto-enabled at startup.
+- Streams joint positions, gripper state, and RGB frames from a USB webcam simultaneously.
+- Recording episodes is controlled from the **Neuracore web UI** (start / stop recording there).
+- Press **Ctrl+C** to stop teleoperation and shut down cleanly; any active recording is stopped automatically.
+
+**Optional arguments:**
+
+| Flag | Default | Description |
+|---|---|---|
+| `--leader-port` | `/dev/ttyACM0` | Serial port for the leader arm |
+| `--leader-id` | `my_awesome_leader_arm` | Calibration id (matches `--teleop.id` used with `lerobot-calibrate`) |
+| `--follower-port` | `/dev/ttyUSB0` | Serial port for the follower arm |
+| `--follower-id` | `my_awesome_follower_arm` | Follower arm id |
+| `--dataset-name` | `so101-teleop-data-<timestamp>` | Dataset name in Neuracore |
+
+**Config parameters:**
+
+The related parameters, such as camera port, image size etc can be configured at `examples/common/configs.py`
+
 ## Project structure
 
 ```
-example_lerobot_so101/
+example_so101/
 ├── examples/
-│   ├── X_leader_arm_teleop_so101.py   # SO101 leader → SO101 follower teleop
-│   └── common/                       # Config, data manager, visualizer, threads
-├── so101_controller.py               # SO101 follower controller (LeRobot SO101Follower)
-├── so101_description/urdf/            # SO101 URDF (minimal + README for official mesh)
+│   ├── 1_leader_arm_teleop_so101.py              # SO101 leader → SO101 follower teleop (URDF or real robot)
+│   ├── 2_collect_teleop_data_with_neuracore.py   # Teleop with Neuracore data collection
+│   └── common/                                   # Config, data manager, visualizer, threads, STS3215 driver
+├── tests/                                        # Unit tests (no hardware required)
+├── so101_controller.py                           # SO101 follower controller
+├── so101_description/urdf/                       # SO101 URDF (minimal + README for official mesh)
 ├── environment.yaml
 └── README.md
 ```
 
-Legacy Piper/AgileX assets (e.g. `piper_controller.py`, `piper_description/`, `scripts/piper/`) are no longer used by the SO101 flow; you can remove them if you only need SO101.
-
 ## Troubleshooting
 
-- **"No calibration registered"**: Run `lerobot-calibrate` for the leader with the same `--teleop.id` you pass as `--leader-id`.
+- **"Calibration file not found"**: Run `lerobot-calibrate` for the leader with the same `--teleop.id` you pass as `--leader-id`. The calibration JSON is saved to `~/.cache/huggingface/lerobot/calibration/teleoperators/so_leader/<id>.json`.
 - **Follower not moving**: Ensure the robot is **enabled** in the GUI and the follower is on the correct `--follower-port`.
-- **Wrong port**: Use `lerobot-find-port` and/or `ls /dev/tty*` to see which port is which; leader and follower must be on different ports when using two arms.
-- **Motor direction opposite**: Some setups need per-motor direction or recalibration; see [LeRobot SO101 issues](https://github.com/huggingface/lerobot/issues).
+- **Wrong port**: Use `ls /dev/tty*` (or `lerobot-find-port` if lerobot is installed) to identify ports; leader and follower must be on different ports when using two arms.
+- **Motor direction opposite**: Some setups need per-motor direction or recalibration; see [LeRobot SO101 docs](https://huggingface.co/docs/lerobot/so101).
 
 ## Safety
 

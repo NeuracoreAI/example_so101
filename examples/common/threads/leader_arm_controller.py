@@ -10,12 +10,12 @@ import traceback
 
 from common.configs import CONTROLLER_DATA_RATE
 from common.data_manager import DataManager
-from common.leader_arm import LerobotSO101LeaderArm
+from common.leader_arm import SO101LeaderArm
 
 
 def leader_arm_controller_thread(
     data_manager: DataManager,
-    leader_arm: LerobotSO101LeaderArm,
+    leader_arm: SO101LeaderArm,
     rate_hz: float | None = None,
 ) -> None:
     """Leader arm controller thread – reads leader and updates DataManager.
@@ -27,7 +27,7 @@ def leader_arm_controller_thread(
 
     Args:
         data_manager: DataManager for thread-safe state.
-        leader_arm: Connected LerobotSO101LeaderArm instance.
+        leader_arm: Connected SO101LeaderArm instance.
         rate_hz: Read rate in Hz; defaults to CONTROLLER_DATA_RATE.
     """
     dt = 1.0 / (rate_hz if rate_hz is not None else CONTROLLER_DATA_RATE)

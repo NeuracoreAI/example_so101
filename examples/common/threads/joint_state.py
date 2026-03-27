@@ -6,6 +6,7 @@ import traceback
 from pathlib import Path
 
 import numpy as np
+
 # Repo root (example_lerobot_so101) so so101_controller is importable
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent.parent))
 from common.configs import JOINT_STATE_STREAMING_RATE
@@ -37,9 +38,16 @@ def joint_state_thread(
                     # visualizer can show the gripper alongside the arm. This couples
                     # joints and gripper and is not generally recommended, but works
                     # for now.
-                    pseudo_gripper_deg = float(np.clip(gripper_open_value, 0.0, 1.0) * 100.0)
+                    pseudo_gripper_deg = float(
+                        np.clip(gripper_open_value, 0.0, 1.0) * 100.0
+                    )
                     joint_with_gripper = np.concatenate(
-                        [np.asarray(current_joint_angles, dtype=np.float64).flatten(), [pseudo_gripper_deg]]
+                        [
+                            np.asarray(
+                                current_joint_angles, dtype=np.float64
+                            ).flatten(),
+                            [pseudo_gripper_deg],
+                        ]
                     )
                     data_manager.set_current_joint_angles(joint_with_gripper)
                 else:

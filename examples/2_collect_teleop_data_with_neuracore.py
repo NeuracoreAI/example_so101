@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-"""SO101 leader arm → SO101 follower teleop with Neuracore data collection.
-
-"""
+"""SO101 leader arm → SO101 follower teleop with Neuracore data collection."""
 
 import argparse
 import multiprocessing
@@ -38,11 +36,17 @@ from common.configs import (  # type: ignore  # noqa: E402
     SO101_OFFSETS_DEG,
     URDF_PATH,
 )
-from common.data_manager import DataManager, RobotActivityState  # type: ignore  # noqa: E402
-from common.leader_arm import LerobotSO101LeaderArm  # type: ignore  # noqa: E402
+from common.data_manager import (  # type: ignore  # noqa: E402
+    DataManager,
+    RobotActivityState,
+)
+from common.leader_arm import SO101LeaderArm  # type: ignore  # noqa: E402
 from common.threads.camera import camera_thread  # type: ignore  # noqa: E402
 from common.threads.joint_state import joint_state_thread  # type: ignore  # noqa: E402
-from common.threads.leader_arm_controller import leader_arm_controller_thread  # type: ignore  # noqa: E402
+from common.threads.leader_arm_controller import (  # type: ignore  # noqa: E402
+    leader_arm_controller_thread,
+)
+
 from so101_controller import SO101Controller  # type: ignore  # noqa: E402
 
 
@@ -55,15 +59,13 @@ def log_to_neuracore_on_change_callback(
             # DataManager stores degrees; Neuracore expects radians.
             data_value = np.radians(value)
             data_dict = {
-                joint_name: angle
-                for joint_name, angle in zip(JOINT_NAMES, data_value)
+                joint_name: angle for joint_name, angle in zip(JOINT_NAMES, data_value)
             }
             nc.log_joint_positions(data_dict, timestamp=timestamp)
         elif name == "log_joint_target_positions":
             data_value = np.radians(value)
             data_dict = {
-                joint_name: angle
-                for joint_name, angle in zip(JOINT_NAMES, data_value)
+                joint_name: angle for joint_name, angle in zip(JOINT_NAMES, data_value)
             }
             nc.log_joint_target_positions(data_dict, timestamp=timestamp)
         elif name == "log_parallel_gripper_open_amounts":
@@ -71,9 +73,7 @@ def log_to_neuracore_on_change_callback(
             nc.log_parallel_gripper_open_amounts(data_dict, timestamp=timestamp)
         elif name == "log_parallel_gripper_target_open_amounts":
             data_dict = {GRIPPER_LOGGING_NAME: float(value)}
-            nc.log_parallel_gripper_target_open_amounts(
-                data_dict, timestamp=timestamp
-            )
+            nc.log_parallel_gripper_target_open_amounts(data_dict, timestamp=timestamp)
         elif name == "log_rgb":
             camera_name = CAMERA_LOGGING_NAME
             image_array = value
@@ -110,7 +110,10 @@ def _teleop_loop(
                 # to the target vector so arm + gripper can be shown together.
                 pseudo_gripper_deg = float(np.clip(mapped_gripper, 0.0, 1.0) * 100.0)
                 target_with_gripper = np.concatenate(
-                    [np.asarray(mapped_angles, dtype=np.float64).flatten(), [pseudo_gripper_deg]]
+                    [
+                        np.asarray(mapped_angles, dtype=np.float64).flatten(),
+                        [pseudo_gripper_deg],
+                    ]
                 )
                 data_manager.set_target_joint_angles(target_with_gripper)
 
@@ -206,7 +209,7 @@ def main() -> None:
 
     # Initialize leader arm and follower mapping
     print("\n🦾 Initializing SO101 leader arm...")
-    leader = LerobotSO101LeaderArm(
+    leader = SO101LeaderArm(
         port=args.leader_port,
         calibration_id=args.leader_id,
     )
@@ -286,7 +289,9 @@ def main() -> None:
     print("🚀 Starting teleoperation with Neuracore data collection...")
     print("   - Move the SO101 leader arm to drive the follower.")
     print("   - The real SO101 follower is being commanded.")
-    print("   - Recording is controlled via Neuracore; this script attempts to auto-start.")
+    print(
+        "   - Recording is controlled via Neuracore; this script attempts to auto-start."
+    )
     print("⚠️  Press Ctrl+C to exit")
     print()
 
@@ -347,4 +352,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

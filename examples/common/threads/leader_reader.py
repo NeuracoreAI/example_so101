@@ -4,12 +4,12 @@ import time
 import traceback
 
 from common.data_manager import DataManager
-from common.leader_arm import LerobotSO101LeaderArm
+from common.leader_arm import SO101LeaderArm
 
 
 def leader_reader_thread(
     data_manager: DataManager,
-    leader_arm: LerobotSO101LeaderArm,
+    leader_arm: SO101LeaderArm,
     rate_hz: float,
 ) -> None:
     """Read leader arm at rate_hz via read_mapped() and store in data_manager.

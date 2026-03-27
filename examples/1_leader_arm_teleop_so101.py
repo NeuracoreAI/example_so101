@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-"""SO101 leader arm → SO101 follower arm teleop (direct joint mapping).
-
-"""
+"""SO101 leader arm → SO101 follower arm teleop (direct joint mapping)."""
+# ruff: noqa: E402
 
 import argparse
 import sys
@@ -29,7 +28,7 @@ from common.configs import (
     VISUALIZATION_RATE,
 )
 from common.data_manager import DataManager, RobotActivityState
-from common.leader_arm import LerobotSO101LeaderArm
+from common.leader_arm import SO101LeaderArm
 from common.robot_visualizer import RobotVisualizer
 from common.threads.leader_reader import leader_reader_thread
 
@@ -75,7 +74,7 @@ def main() -> None:
     )
     print("=" * 60)
 
-    leader = LerobotSO101LeaderArm(port=args.leader_port, calibration_id=args.leader_id)
+    leader = SO101LeaderArm(port=args.leader_port, calibration_id=args.leader_id)
     leader.configure_follower(
         follower_limits_deg=SO101_JOINT_LIMITS_DEG,
         follower_offsets_deg=SO101_OFFSETS_DEG,
@@ -210,7 +209,9 @@ def main() -> None:
                     and robot_activity_state == RobotActivityState.ENABLED
                 ):
                     visualizer.update_ghost_robot_visibility(True)
-                    target_gripper = 1.0 - trigger_value if trigger_value is not None else 0.5
+                    target_gripper = (
+                        1.0 - trigger_value if trigger_value is not None else 0.5
+                    )
                     _, ghost_cfg_urdf = _joint_cfg_6_from_5_and_gripper(
                         target_joint_angles, target_gripper
                     )

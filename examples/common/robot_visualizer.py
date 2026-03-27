@@ -323,7 +323,9 @@ class RobotVisualizer:
         for i in range(num_joints):
             angle_rad = joint_config[i]
             angle_deg = joint_angles_deg[i]
-            joint_type = "Robot" if (not show_gripper or i < num_joints - 1) else "Gripper"
+            joint_type = (
+                "Robot" if (not show_gripper or i < num_joints - 1) else "Gripper"
+            )
             label = f"Joint {i+1} ({joint_type})" if show_gripper else f"J{i+1}"
             joint_angles_str += f"  {label}: {angle_rad:.3f} rad ({angle_deg:.1f}°)\n"
 

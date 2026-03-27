@@ -6,9 +6,7 @@ import numpy as np
 
 # SO101 URDF: so101_minimal.urdf is a placeholder; replace with so101.urdf from SO-ARM100 for accurate mesh (see so101_description/urdf/README.md)
 URDF_PATH = str(
-    Path(__file__).parent.parent.parent
-    / "so101_description"
-    / "robot.urdf"
+    Path(__file__).parent.parent.parent / "so101_description" / "robot.urdf"
 )
 
 GRIPPER_FRAME_NAME = "gripper_frame_link"
@@ -43,7 +41,7 @@ JOINT_STATE_STREAMING_RATE = 100.0
 CAMERA_FRAME_STREAMING_RATE = 30.0
 
 # USB webcam (OpenCV)
-CAMERA_DEVICE_INDEX = 1  # 0 = first camera, 1 = second, etc.
+CAMERA_DEVICE_INDEX = 4  # 0 = first camera, 1 = second, etc.
 CAMERA_WIDTH = 640
 CAMERA_HEIGHT = 480
 

@@ -20,17 +20,16 @@ Usage:
 
 import argparse
 import sys
-import threading
 import time
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import viser
 import yourdfpy
+from common.configs import URDF_PATH
 from scipy.spatial.transform import Rotation
 from viser.extras import ViserUrdf
-
-from common.configs import URDF_PATH
 
 # Paths: repo root = parent of examples/
 _root = Path(__file__).resolve().parent.parent
@@ -87,6 +86,7 @@ def _transform_to_position_wxyz(
 
 
 def main() -> None:
+    """Run the Viser UI and optionally mirror slider commands to the real robot."""
     parser = argparse.ArgumentParser(
         description="SO101 URDF in Viser; control real robot from sliders."
     )
@@ -107,7 +107,6 @@ def main() -> None:
     parser.add_argument("--follower-port", type=str, default="/dev/ttyUSB0")
     parser.add_argument("--follower-id", type=str, default="my_awesome_follower_arm")
     args = parser.parse_args()
-
 
     print("=" * 60)
     print("SO101 VISER CONTROL")
@@ -164,9 +163,9 @@ def main() -> None:
     # Robot controller (optional)
     robot_controller = None
     if args.real_robot:
-        from so101_controller import SO101Controller
-
         from common.configs import NEUTRAL_JOINT_ANGLES
+
+        from so101_controller import SO101Controller
 
         print("🤖 Connecting to SO101 follower...")
         robot_controller = SO101Controller(
@@ -229,7 +228,7 @@ def main() -> None:
         )
 
     @frame_dropdown.on_update
-    def _on_frame_choice(_) -> None:
+    def _on_frame_choice(_: Any) -> None:
         val = frame_dropdown.value
         selected_frame_name[0] = None if val == "(none)" else val
         _refresh_vis()
@@ -274,7 +273,7 @@ def main() -> None:
         robot_controller.set_target_joint_angles(body_deg)
         robot_controller.set_gripper_open_value(gripper_01)
 
-    def on_slider_update(_) -> None:
+    def on_slider_update(_: Any) -> None:
         _refresh_vis()
         _slider_to_controller()
 
@@ -283,10 +282,12 @@ def main() -> None:
 
     if args.real_robot and robot_controller is not None:
         with server.gui.add_folder("Robot"):
-            enable_btn = server.gui.add_button("Enable robot" if not robot_enabled[0] else "Disable robot")
+            enable_btn = server.gui.add_button(
+                "Enable robot" if not robot_enabled[0] else "Disable robot"
+            )
 
             @enable_btn.on_click
-            def _toggle_enable(_) -> None:
+            def _toggle_enable(_: Any) -> None:
                 if robot_enabled[0]:
                     robot_controller.graceful_stop()
                     robot_enabled[0] = False
@@ -303,7 +304,7 @@ def main() -> None:
             home_btn = server.gui.add_button("Home")
 
             @home_btn.on_click
-            def _go_home(_) -> None:
+            def _go_home(_: Any) -> None:
                 if not robot_enabled[0]:
                     print("⚠️ Enable robot first")
                     return
@@ -319,7 +320,7 @@ def main() -> None:
             sync_btn = server.gui.add_button("Sync from robot")
 
             @sync_btn.on_click
-            def _sync_from_robot(_) -> None:
+            def _sync_from_robot(_: Any) -> None:
                 cur = robot_controller.get_current_joint_angles()
                 g = robot_controller.get_current_gripper_open_value()
                 if cur is not None and len(cur) >= 5:
@@ -337,7 +338,7 @@ def main() -> None:
         reset_btn = server.gui.add_button("Reset to Neutral")
 
     @reset_btn.on_click
-    def _reset(_) -> None:
+    def _reset(_: Any) -> None:
         for i, handle in enumerate(joint_handles):
             if joint_names[i] == "gripper":
                 handle.value = _rad_to_gripper_01(initial_config[i]) * 100.0
@@ -350,7 +351,10 @@ def main() -> None:
 
     print("✓ Viser server ready")
     print(f"\n🌐 Open http://localhost:{args.port}")
-    print("   Move sliders to drive the URDF" + (" and the real robot (when enabled)." if args.real_robot else "."))
+    print(
+        "   Move sliders to drive the URDF"
+        + (" and the real robot (when enabled)." if args.real_robot else ".")
+    )
     print("   Ctrl+C to exit\n")
 
     try:
