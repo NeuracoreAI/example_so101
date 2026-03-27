@@ -1,4 +1,5 @@
-# SO101 teleop environment. Install LeRobot with feetech separately: pip install -e ".[feetech]" (from lerobot repo).
+# SO101 teleop environment.
+# No longer requires lerobot. The STS3215 motor driver uses scservo-sdk directly.
 name: so101-teleop
 channels:
   - defaults
@@ -13,3 +14,4 @@ dependencies:
       - yourdfpy
       - neuracore
       - neuracore_types
+      - scservo-sdk
