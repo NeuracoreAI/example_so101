@@ -5,10 +5,13 @@
 
 import argparse
 import multiprocessing
+import select
 import sys
+import termios
 import threading
 import time
 import traceback
+import tty
 from pathlib import Path
 from typing import Any
 
@@ -152,7 +155,7 @@ def main() -> None:
     parser.add_argument("--leader-port", type=str, default="/dev/ttyACM0")
     parser.add_argument("--leader-id", type=str, default="my_awesome_leader_arm")
     parser.add_argument("--leader-rate", type=float, default=50.0)
-    parser.add_argument("--follower-port", type=str, default="/dev/ttyUSB0")
+    parser.add_argument("--follower-port", type=str, default="/dev/ttyACM1")
     parser.add_argument("--follower-id", type=str, default="my_awesome_follower_arm")
     parser.add_argument(
         "--dataset-name",
@@ -250,10 +253,6 @@ def main() -> None:
             daemon=True,
         )
         joint_state_thread_obj.start()
-        # Enable robot activity state and resume controller
-        data_manager.set_robot_activity_state(RobotActivityState.ENABLED)
-        if not robot_controller.resume_robot():
-            print("⚠️  Failed to resume SO101 robot; commands will not be sent.")
 
     # Start leader arm controller thread (same pattern as Meta Quest controller thread)
     print("\n🎮 Starting leader arm controller thread...")
@@ -285,20 +284,79 @@ def main() -> None:
     print()
     print("🚀 Starting teleoperation with Neuracore data collection...")
     print("   - Move the SO101 leader arm to drive the follower.")
-    print("   - The real SO101 follower is being commanded.")
-    print("   - Recording is controlled via Neuracore; this script attempts to auto-start.")
+    print("   - The follower starts disabled; press 'e' to enable it.")
+    if sys.stdin.isatty():
+        print("   - Press 'e' (no Enter) to enable / disable the follower.")
+        print("   - Press 'r' (no Enter) to start / stop Neuracore recording.")
+    else:
+        print("   - Stdin is not a TTY; use the Neuracore UI for recording.")
     print("⚠️  Press Ctrl+C to exit")
     print()
 
+    stdin_fd = sys.stdin.fileno()
+    old_termios: Any = None
+    if sys.stdin.isatty():
+        old_termios = termios.tcgetattr(stdin_fd)
+        tty.setcbreak(stdin_fd)
+
+    def toggle_robot_enabled() -> None:
+        if robot_controller is None:
+            return
+        state = data_manager.get_robot_activity_state()
+        if state == RobotActivityState.ENABLED:
+            data_manager.set_robot_activity_state(RobotActivityState.DISABLED)
+            robot_controller.graceful_stop()
+            data_manager.set_teleop_state(False, None, None)
+            print("\n✓ Robot disabled (press 'e' to enable)\n", flush=True)
+        elif state == RobotActivityState.DISABLED:
+            if robot_controller.resume_robot():
+                data_manager.set_robot_activity_state(RobotActivityState.ENABLED)
+                print("\n✓ Robot enabled (press 'e' to disable)\n", flush=True)
+            else:
+                print("\n✗ Failed to enable robot\n", flush=True)
+        else:
+            print("\n⚠️  Robot is homing; wait before toggling enable\n", flush=True)
+
+    def toggle_neuracore_recording() -> None:
+        if not nc.is_recording():
+            try:
+                nc.start_recording()
+                print("\n✓ Neuracore recording started (press 'r' again to stop)\n", flush=True)
+            except Exception as e:
+                print(f"\n✗ Failed to start recording: {e}\n", flush=True)
+                traceback.print_exc()
+        else:
+            try:
+                nc.stop_recording()
+                print("\n✓ Neuracore recording stopped (press 'r' to start)\n", flush=True)
+            except Exception as e:
+                print(f"\n✗ Failed to stop recording: {e}\n", flush=True)
+                traceback.print_exc()
+
     try:
-        while not data_manager.is_shutdown_requested():
-            time.sleep(1.0)
-    except KeyboardInterrupt:
-        print("\n👋 Interrupt received – shutting down gracefully...")
-    except Exception as e:
-        print(f"\n❌ Demo error. Exception: {e}")
-        print("Traceback:")
-        traceback.print_exc()
+        try:
+            while not data_manager.is_shutdown_requested():
+                if old_termios is not None:
+                    readable, _, _ = select.select([sys.stdin], [], [], 1.0)
+                    if readable:
+                        ch = sys.stdin.read(1)
+                        if ch:
+                            key = ch.lower()
+                            if key == "e":
+                                toggle_robot_enabled()
+                            elif key == "r":
+                                toggle_neuracore_recording()
+                else:
+                    time.sleep(1.0)
+        except KeyboardInterrupt:
+            print("\n👋 Interrupt received – shutting down gracefully...")
+        except Exception as e:
+            print(f"\n❌ Demo error. Exception: {e}")
+            print("Traceback:")
+            traceback.print_exc()
+    finally:
+        if old_termios is not None:
+            termios.tcsetattr(stdin_fd, termios.TCSADRAIN, old_termios)
 
     # Cleanup
     print("\n🧹 Cleaning up...")
