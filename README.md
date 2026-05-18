@@ -21,7 +21,7 @@ conda activate so101-teleop
 
 ### 2. One-time hardware setup with LeRobot CLI tools
 
-The teleoperation scripts **do not require lerobot at runtime** — `scservo-sdk` (already in `environment.yaml`) communicates with the motors directly.
+The teleoperation scripts **do not require lerobot at runtime** — `feetech-servo-sdk` (already in `environment.yaml`, imported as `scservo_sdk`) communicates with the motors directly.
 
 However, the `lerobot` CLI tools are still needed **once** to set up motor IDs and calibrate the leader arm. Install lerobot with the feetech extra (from the [lerobot](https://github.com/huggingface/lerobot) repo):
 

@@ -1,5 +1,5 @@
 # SO101 teleop environment.
-# No longer requires lerobot. The STS3215 motor driver uses scservo-sdk directly.
+# No longer requires lerobot. The STS3215 motor driver uses feetech-servo-sdk (import scservo_sdk).
 name: so101-teleop
 channels:
   - defaults
@@ -12,6 +12,5 @@ dependencies:
       - opencv-python
       - viser
       - yourdfpy
-      - neuracore
-      - neuracore_types
-      - scservo-sdk
+      - git+https://github.com/NeuracoreAI/neuracore.git@main
+      - feetech-servo-sdk>=1.0.0,<2.0.0
