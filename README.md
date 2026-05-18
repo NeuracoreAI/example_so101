@@ -137,6 +137,44 @@ python examples/2_collect_teleop_data_with_neuracore.py \
 | `--follower-id` | `my_awesome_follower_arm` | Follower arm id |
 | `--dataset-name` | `so101-teleop-data-<timestamp>` | Dataset name in Neuracore |
 
+### Policy rollout (examples 4–6)
+
+After collecting data with example 2 and training a policy in Neuracore, use these scripts to test it on the SO101 follower. They use the same embodiment channels as data collection: six joint positions (including a pseudo gripper joint), parallel gripper open amount, and RGB camera `rgb`.
+
+**Example 4 – interactive rollout with leader teleop and Viser**
+
+```bash
+python examples/4_rollout_neuracore_policy.py \
+  --train-run-name YOUR_RUN_NAME \
+  --leader-port /dev/ttyACM0 --leader-id my_awesome_leader_arm \
+  --follower-port /dev/ttyACM1 --follower-id my_awesome_follower_arm
+```
+
+- **SO101 leader arm** teleop (same mapping as example 2), not Meta Quest — Agilex example 4 uses Quest; SO101 uses a second SO101 arm as leader.
+- Viser workflow: **Enable Robot** → **Engage Leader Teleop** (replaces Quest “hold grip”) → move leader → **Run Policy** / execute.
+- Viser GUI (`http://localhost:8080`): enable/disable, engage leader teleop, home, run policy, execute horizon, continuous play, live camera + ghost preview.
+- Policy source: `--train-run-name`, `--model-path`, or `--remote-endpoint-name`.
+
+**Example 5 – minimal terminal-only rollout**
+
+```bash
+python examples/5_rollout_neuracore_policy_minimal.py \
+  --train-run-name YOUR_RUN_NAME \
+  --follower-port /dev/ttyACM1 --follower-id my_awesome_follower_arm
+```
+
+No leader arm or GUI: enables the follower, homes, then loops predict → execute. Ctrl+C homes and exits.
+
+**Example 6 – visualize policy from a dataset**
+
+```bash
+python examples/6_visualize_policy_from_dataset.py \
+  --dataset-name so101-demo \
+  --train-run-name YOUR_RUN_NAME
+```
+
+Loads a random synchronized dataset step, runs the policy, and animates the predicted horizon in Viser (no real robot).
+
 ## Project structure
 
 ```
@@ -144,6 +182,9 @@ example_so101/
 ├── examples/
 │   ├── 1_leader_arm_teleop_so101.py              # SO101 leader → SO101 follower teleop (URDF or real robot)
 │   ├── 2_collect_teleop_data_with_neuracore.py   # Teleop with Neuracore data collection
+│   ├── 4_rollout_neuracore_policy.py             # Policy rollout + leader teleop + Viser
+│   ├── 5_rollout_neuracore_policy_minimal.py     # Minimal policy rollout (terminal only)
+│   ├── 6_visualize_policy_from_dataset.py        # Policy preview from dataset (Viser only)
 │   └── common/                                   # Config, data manager, visualizer, threads, STS3215 driver
 ├── tests/                                        # Unit tests (no hardware required)
 ├── so101_controller.py                           # SO101 follower controller

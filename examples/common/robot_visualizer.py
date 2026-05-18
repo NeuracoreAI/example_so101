@@ -93,6 +93,8 @@ class RobotVisualizer:
         self._start_policy_execution_button = None
         self._run_and_start_policy_execution_button = None
         self._play_policy_button = None
+        self._leader_teleop_button = None
+        self._rgb_image_handle = None
 
         # Internal state
         self._ema_timing = 0.001
@@ -132,6 +134,31 @@ class RobotVisualizer:
         self._gripper_status_handle = self._server.gui.add_text(
             "Gripper Status", "Open (0%)"
         )
+
+    def add_rgb_image_placeholder(self, height: int = 480, width: int = 640) -> None:
+        """Reserve a fixed GUI slot for the USB camera feed."""
+        if self._rgb_image_handle is not None:
+            return
+        dummy_image = np.zeros((height, width, 3), dtype=np.uint8)
+        self._rgb_image_handle = self._server.gui.add_image(
+            dummy_image,
+            label="RGB Camera",
+            format="jpeg",
+            jpeg_quality=85,
+        )
+
+    def update_rgb_image(self, rgb_image: np.ndarray | None) -> None:
+        """Show or update RGB camera image in the Viser GUI."""
+        if rgb_image is None:
+            return
+        if self._rgb_image_handle is None:
+            self.add_rgb_image_placeholder(
+                height=rgb_image.shape[0], width=rgb_image.shape[1]
+            )
+        rgb_handle = self._rgb_image_handle
+        if rgb_handle is None:
+            return
+        rgb_handle.image = rgb_image
 
     def add_homing_controls(self) -> None:
         """Add homing controls."""
@@ -640,6 +667,22 @@ class RobotVisualizer:
             options=["targeting_time", "targeting_pose"],
             initial_value=initial_execution_mode,
         )
+
+    def add_leader_teleop_button(self) -> None:
+        """Add engage/disengage button for SO101 leader-arm teleop."""
+        self._leader_teleop_button = self._server.gui.add_button("Engage Leader Teleop")
+
+    def update_leader_teleop_button_status(self, engaged: bool) -> None:
+        """Update leader teleop button label."""
+        if self._leader_teleop_button is not None:
+            self._leader_teleop_button.label = (
+                "Disengage Leader Teleop" if engaged else "Engage Leader Teleop"
+            )
+
+    def set_leader_teleop_callback(self, callback: Callable[[], Any]) -> None:
+        """Set callback for leader teleop engage/disengage button."""
+        if self._leader_teleop_button is not None:
+            self._leader_teleop_button.on_click(lambda _: callback())
 
     def add_policy_buttons(self) -> None:
         """Add policy control buttons."""
