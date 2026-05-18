@@ -61,11 +61,15 @@ def joint_state_thread(
 
             elif robot_activity_state == RobotActivityState.ENABLED:
                 if (
-                    target_joint_angles is not None
+                    data_manager.get_leader_teleop_engaged()
+                    and target_joint_angles is not None
                     and trigger_value is not None
                     and data_manager.get_teleop_active()
                 ):
-                    robot_controller.set_target_joint_angles(target_joint_angles)
+                    body_targets = np.asarray(
+                        target_joint_angles, dtype=np.float64
+                    ).flatten()[:5]
+                    robot_controller.set_target_joint_angles(body_targets)
                     target_gripper_open_value = 1.0 - trigger_value
                     data_manager.set_target_gripper_open_value(
                         target_gripper_open_value

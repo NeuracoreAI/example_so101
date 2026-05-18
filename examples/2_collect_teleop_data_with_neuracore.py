@@ -321,14 +321,14 @@ def main() -> None:
         if not nc.is_recording():
             try:
                 nc.start_recording()
-                print("\n✓ Neuracore recording started (press 'r' again to stop)\n", flush=True)
+                print("\n✓ 🔴 Neuracore recording started (press 'r' again to stop)\n", flush=True)
             except Exception as e:
                 print(f"\n✗ Failed to start recording: {e}\n", flush=True)
                 traceback.print_exc()
         else:
             try:
                 nc.stop_recording()
-                print("\n✓ Neuracore recording stopped (press 'r' to start)\n", flush=True)
+                print("\n✓ ⏹️  Neuracore recording stopped (press 'r' to start)\n", flush=True)
             except Exception as e:
                 print(f"\n✗ Failed to stop recording: {e}\n", flush=True)
                 traceback.print_exc()
