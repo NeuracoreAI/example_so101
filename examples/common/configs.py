@@ -61,16 +61,18 @@ TARGETING_POSE_TIME_THRESHOLD = 1.0
 
 GRIPPER_LOGGING_NAME = "gripper"
 CAMERA_LOGGING_NAME = "rgb"
-# SO101: 5 body joints (same order as LeRobot so_follower)
+
+GRIPPER_NAME = GRIPPER_LOGGING_NAME  # alias used by policy rollout examples
+CAMERA_NAMES = [CAMERA_LOGGING_NAME]
+# SO101 joint order for Neuracore logging / policy embodiment (LeRobot so_follower + pseudo gripper).
+# Last entry is a pseudo joint for visualization; real gripper is also logged via PARALLEL_GRIPPER_OPEN_AMOUNTS.
+# Hardware control uses JOINT_NAMES[:-1].
 JOINT_NAMES = [
     "shoulder_pan",
     "shoulder_lift",
     "elbow_flex",
     "wrist_flex",
     "wrist_roll",
-    # NOTE: We append the gripper as a pseudo-joint in some demos so Neuracore
-    # visualizers can show it alongside the arm. This couples joints and gripper
-    # and is not generally recommended, but works for now.
     "gripper",
 ]
 

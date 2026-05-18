@@ -52,6 +52,8 @@ class TeleopState:
         self._lock = threading.Lock()
 
         self.active: bool = False
+        # SO101 leader arm: user must explicitly engage teleop (no Quest grip button).
+        self.leader_engaged: bool = False
         self.controller_initial_transform: np.ndarray | None = None
         self.robot_initial_transform: np.ndarray | None = None
 
@@ -300,6 +302,20 @@ class DataManager:
         """Get teleoperation active state (thread-safe)."""
         with self._teleop_state._lock:
             return self._teleop_state.active
+
+    def set_leader_teleop_engaged(self, engaged: bool) -> None:
+        """Engage/disengage leader-arm teleop (SO101; replaces Quest grip-to-teleop)."""
+        with self._teleop_state._lock:
+            self._teleop_state.leader_engaged = engaged
+            if not engaged:
+                self._teleop_state.active = False
+                self._teleop_state.controller_initial_transform = None
+                self._teleop_state.robot_initial_transform = None
+
+    def get_leader_teleop_engaged(self) -> bool:
+        """True when the user has engaged leader-arm teleop."""
+        with self._teleop_state._lock:
+            return self._teleop_state.leader_engaged
 
     def get_initial_robot_controller_transforms(
         self,
