@@ -12,5 +12,6 @@ dependencies:
       - opencv-python
       - viser
       - yourdfpy
+      - pyserial
       - git+https://github.com/NeuracoreAI/neuracore.git@main
       - feetech-servo-sdk>=1.0.0,<2.0.0

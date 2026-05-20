@@ -31,6 +31,12 @@ pip install -e ".[feetech]"
 
 You can uninstall it again after calibration is done.
 
+If your LeRobot is already calibrated and you decide you do not need to use `lerobot` CLI tools, you can use a script local to this repo to discover the ports your leader and follower are connected to:
+
+```bash
+python scripts/lerobot_find_port.py
+```
+
 ## Getting your SO101 robot working
 
 ### Motor setup (follower arm, do before assembly if possible)
