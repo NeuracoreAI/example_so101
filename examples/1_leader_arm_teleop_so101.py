@@ -143,11 +143,13 @@ def main() -> None:
                 data_manager.set_robot_activity_state(RobotActivityState.DISABLED)
                 robot_controller.graceful_stop()
                 data_manager.set_teleop_state(False, None, None)
+                data_manager.set_leader_teleop_engaged(False)
                 visualizer.update_toggle_robot_enabled_status(False)
                 print("✓ 🔴 Robot disabled")
             elif state == RobotActivityState.DISABLED:
                 if robot_controller.resume_robot():
                     data_manager.set_robot_activity_state(RobotActivityState.ENABLED)
+                    data_manager.set_leader_teleop_engaged(True)
                     visualizer.update_toggle_robot_enabled_status(True)
                     print("✓ 🟢 Robot enabled")
                 else:
