@@ -137,6 +137,26 @@ python examples/2_collect_teleop_data_with_neuracore.py \
 | `--follower-id` | `my_awesome_follower_arm` | Follower arm id |
 | `--dataset-name` | `so101-teleop-data-<timestamp>` | Dataset name in Neuracore |
 
+### 3. Replay Neuracore Episodes
+
+**Script**: `examples/3_replay_neuracore_episodes.py`
+
+Replay recorded episodes from a Neuracore dataset on the physical robot.
+
+```bash
+python3 examples/3_replay_neuracore_episodes.py --dataset-name <dataset-name> --frequency <hz> --follower-port <follower-port> --follower-id my_awesome_follower_arm --episode-index <idx>
+```
+
+**Arguments**:
+- `--dataset-name`: Name of the Neuracore dataset to replay
+- `--frequency`: Playback frequency in Hz (default: 0). 0 plays the data aperiodically (not synchronized at a certain frequency as it was recorded). 
+- `--follower-port`: The port on which your follower is connected (default: `/dev/ttyACM1`)
+- `--follower-id`: The follower ID name you set for your follower arm
+- `--episode-index`: Which episode to replay (default: 0). -1 will start replaying all the episodes one after the other.
+
+**NOTE:** please be careful that the robot **will start moving** on the same trajectory that was recorded. Pressing `ctrl+C`
+will gracefully disable the robot and it will cut power to the motors after 5 seconds.
+
 ### Policy rollout (examples 4–6)
 
 After collecting data with example 2 and training a policy in Neuracore, use these scripts to test it on the SO101 follower. They use the same embodiment channels as data collection: six joint positions (including a pseudo gripper joint), parallel gripper open amount, and RGB camera `rgb`.
