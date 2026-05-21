@@ -94,18 +94,24 @@ def main() -> None:
     dataset = nc.get_dataset(args.dataset_name)
     print(f"  ✓ {len(dataset)} episodes")
 
-    input_cross = {args.robot_name: input_embodiment}
-    output_cross = (
-        {args.robot_name: output_embodiment}
+    print("🔁 Building cross_embodiment_union for synchronization...")
+    input_cross_embodiment_description = {
+        robot_id: input_embodiment for robot_id in dataset.robot_ids
+    }
+    output_cross_embodiment_description = (
+        {robot_id: output_embodiment for robot_id in dataset.robot_ids}
         if output_embodiment is not None
         else {}
     )
-    cross_union = merge_cross_embodiment_description(input_cross, output_cross)
+    cross_embodiment_union = merge_cross_embodiment_description(
+        input_cross_embodiment_description,
+        output_cross_embodiment_description,
+    )
 
     print("🔁 Synchronizing dataset...")
     synced_dataset = dataset.synchronize(
         frequency=args.frequency,
-        cross_embodiment_union=cross_union,
+        cross_embodiment_union=cross_embodiment_union,
         prefetch_videos=True,
         max_prefetch_workers=2,
     )

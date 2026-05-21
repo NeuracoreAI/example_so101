@@ -9,6 +9,8 @@ dependencies:
   - pip:
       - numpy
       - scipy
+      - torch
+      - hydra-core
       - opencv-python
       - viser
       - yourdfpy

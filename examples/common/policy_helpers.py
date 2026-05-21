@@ -6,12 +6,11 @@ from typing import Any
 
 import neuracore as nc
 import numpy as np
-from neuracore_types import (
+from neuracore_types import DataType, EmbodimentDescription
+from neuracore_types.batched_nc_data import (
     BatchedJointData,
     BatchedNCData,
     BatchedParallelGripperOpenAmountData,
-    DataType,
-    EmbodimentDescription,
 )
 
 from .configs import (
