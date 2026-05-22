@@ -335,6 +335,17 @@ class SO101FollowerDriver:
                 self._write_1byte(info["id"], ADDR_LOCK, 0)
         self._port_handler.closePort()
 
+    def set_all_torque(self, enabled: bool) -> None:
+        """Enable or disable torque on all follower motors."""
+        if not self._port_handler.is_open:
+            raise ConnectionError("Serial port is not open")
+        torque_value = 1 if enabled else 0
+        for info in self._calibration.values():
+            motor_id = info["id"]
+            self._write_1byte(motor_id, ADDR_LOCK, 0)
+            self._write_1byte(motor_id, ADDR_TORQUE_ENABLE, torque_value)
+            self._write_1byte(motor_id, ADDR_LOCK, 1)
+
     def _write_1byte(self, motor_id: int, addr: int, value: int) -> None:
         self._packet_handler.write1ByteTxRx(self._port_handler, motor_id, addr, value)
 

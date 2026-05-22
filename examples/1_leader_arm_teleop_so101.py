@@ -113,6 +113,15 @@ def main() -> None:
             debug_mode=False,
         )
         robot_controller.start_control_loop()
+        # Start with motor torque disabled for safety; controller will
+        # resume/enable torque when the user explicitly enables robot.
+        try:
+            if robot_controller.disable_motors():
+                print("✓ Motors start disabled")
+            else:
+                print("⚠️ Failed to disable motors on start")
+        except Exception as e:
+            print(f"⚠️ Exception disabling motors on start: {e}")
         print("📊 Starting joint state thread...")
         joint_state_thread_obj = threading.Thread(
             target=joint_state_thread,
@@ -135,19 +144,23 @@ def main() -> None:
     if use_real_robot:
         visualizer.add_homing_controls()
         visualizer.add_toggle_robot_enabled_status_button()
+        # Ensure the toggle reflects motors being disabled at startup
+        visualizer.update_toggle_robot_enabled_status(False)
 
         def toggle_robot_enabled() -> None:
             assert robot_controller is not None
             state = data_manager.get_robot_activity_state()
             if state == RobotActivityState.ENABLED:
-                data_manager.set_robot_activity_state(RobotActivityState.DISABLED)
-                robot_controller.graceful_stop()
-                data_manager.set_teleop_state(False, None, None)
-                data_manager.set_leader_teleop_engaged(False)
-                visualizer.update_toggle_robot_enabled_status(False)
-                print("✓ 🔴 Robot disabled")
+                if robot_controller.disable_motors():
+                    data_manager.set_robot_activity_state(RobotActivityState.DISABLED)
+                    data_manager.set_teleop_state(False, None, None)
+                    data_manager.set_leader_teleop_engaged(False)
+                    visualizer.update_toggle_robot_enabled_status(False)
+                    print("✓ 🔴 Robot disabled")
+                else:
+                    print("✗ Failed to disable robot")
             elif state == RobotActivityState.DISABLED:
-                if robot_controller.resume_robot():
+                if robot_controller.enable_motors():
                     data_manager.set_robot_activity_state(RobotActivityState.ENABLED)
                     data_manager.set_leader_teleop_engaged(True)
                     visualizer.update_toggle_robot_enabled_status(True)
