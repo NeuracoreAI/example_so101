@@ -269,6 +269,34 @@ class SO101Controller:
             print(f"✗ Resume error: {e}")
             return False
 
+    def enable_motors(self) -> bool:
+        """Enable torque on follower motors and resume the control loop."""
+        if self._robot is None or not self._robot.is_connected:
+            print("✗ Cannot enable motors: follower arm is not connected")
+            return False
+        try:
+            with self._bus_lock:
+                self._robot.set_all_torque(True)
+            return self.resume_robot()
+        except Exception as e:
+            print(f"✗ Enable motors error: {e}")
+            return False
+
+    def disable_motors(self) -> bool:
+        """Disable torque on follower motors and stop sending commands."""
+        if self._robot is None or not self._robot.is_connected:
+            print("✗ Cannot disable motors: follower arm is not connected")
+            return False
+        try:
+            self.graceful_stop()
+            with self._bus_lock:
+                self._robot.set_all_torque(False)
+            print("✓ Motor torque disabled")
+            return True
+        except Exception as e:
+            print(f"✗ Disable motors error: {e}")
+            return False
+
     def is_robot_homed(self, tolerance_degrees: float = 2.0) -> bool:
         """True if current joint angles are near home."""
         cur = self.get_current_joint_angles()
