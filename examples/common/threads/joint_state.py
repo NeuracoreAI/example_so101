@@ -31,19 +31,18 @@ def joint_state_thread(
             gripper_open_value = robot_controller.get_current_gripper_open_value()
 
             if current_joint_angles is not None:
-                if gripper_open_value is not None:
-                    # NOTE: For Neuracore dataset visualization we also append a sixth
-                    # "gripper" entry to the joint vector as a pseudo-angle so the
-                    # visualizer can show the gripper alongside the arm. This couples
-                    # joints and gripper and is not generally recommended, but works
-                    # for now.
-                    pseudo_gripper_deg = float(np.clip(gripper_open_value, 0.0, 1.0) * 100.0)
-                    joint_with_gripper = np.concatenate(
-                        [np.asarray(current_joint_angles, dtype=np.float64).flatten(), [pseudo_gripper_deg]]
-                    )
-                    data_manager.set_current_joint_angles(joint_with_gripper)
-                else:
-                    data_manager.set_current_joint_angles(current_joint_angles)
+                # Always append a sixth pseudo-gripper entry so downstream consumers
+                # (IK solver, visualizer) can rely on a consistent 6-value vector.
+                # Default to 0 if the gripper hasn't been read yet.
+                pseudo_gripper_deg = (
+                    float(np.clip(gripper_open_value, 0.0, 1.0) * 100.0)
+                    if gripper_open_value is not None
+                    else 0.0
+                )
+                joint_with_gripper = np.concatenate(
+                    [np.asarray(current_joint_angles, dtype=np.float64).flatten(), [pseudo_gripper_deg]]
+                )
+                data_manager.set_current_joint_angles(joint_with_gripper)
 
             # Get current gripper open value and set in state (also logged separately)
             if gripper_open_value is not None:

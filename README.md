@@ -8,6 +8,7 @@ This project is an example of **SO101-to-SO101 teleoperation**: you use one SO10
 - Conda (recommended)
 - **Leader**: One SO101 arm (LeRobot SO101 leader) with calibration
 - **Follower** (optional): Second SO101 arm for real-robot teleop (USB, motors configured)
+- **Meta Quest** (optional): Meta Quest 2/3/Pro headset for Quest-based IK teleop (example 7)
 
 ## Installation
 
@@ -201,6 +202,129 @@ python examples/6_visualize_policy_from_dataset.py \
 
 Loads a random synchronized dataset step, runs the policy, and animates the predicted horizon in Viser (no real robot).
 
+### Meta Quest Teleop
+
+#### Additional installation
+
+Install the Pink IK dependencies and the `meta_quest_teleop` package:
+
+```bash
+conda env update -f environment.yaml          # adds pin, pin-pink, qpsolvers[quadprog]
+pip install -e meta_quest_teleop/             # installs the MetaQuestReader package
+```
+
+Ensure your Meta Quest headset is **on the same WiFi network** as your machine and has the companion app running (see the `meta_quest_teleop` README for the Android app setup).
+
+#### Example 7 – IK parameter tuning (single arm)
+
+Drive the SO101 follower arm using a **Meta Quest controller** (right hand). Unlike the leader-arm examples, this uses **Pink IK** to convert the Quest controller's cartesian pose into SO101 joint angles in real time. A Viser GUI lets you tune the 1€ filter and IK parameters live.
+
+```bash
+python examples/7_tune_quest_teleop_params.py \
+  --port /dev/ttyACM0 \
+  --follower-id my_awesome_follower_arm \
+  --ip-address <quest-ip>         # omit for auto-discovery
+```
+
+**Optional arguments:**
+
+| Flag | Default | Description |
+|---|---|---|
+| `--port` | `/dev/ttyACM0` | Serial port for the SO101 follower arm |
+| `--follower-id` | `my_awesome_follower_arm` | Follower arm calibration ID |
+| `--ip-address` | `None` | Meta Quest IP address (auto-discovered if omitted) |
+
+**Controls:**
+
+| Input | Action |
+|---|---|
+| **Button A** | Enable / disable robot |
+| **Right grip (hold)** | Activate IK teleoperation (dead man's switch) |
+| **Move controller** | Robot end-effector follows |
+| **Right trigger (hold)** | Close gripper |
+| **Button B** | Send robot to home position |
+| **Release grip** | Pause teleoperation |
+
+**Viser GUI** (`http://localhost:8080`):
+
+- **Enable / Disable robot** toggle button
+- **Home** button
+- **Controller filter params** — tune the 1€ filter (`min_cutoff`, `beta`, `d_cutoff`) live to balance smoothness vs. latency
+- **Scaling controls** — adjust `translation_scale` and `rotation_scale` to calibrate how much the robot moves relative to the controller
+- **Pink IK parameters** — tune `position_cost`, `orientation_cost`, `frame_task_gain`, `lm_damping`, `damping_cost`, `solver_damping_value` in real time
+- **Ghost robot** — translucent preview of the IK target (where the robot is aiming, not where it currently is)
+- **IK solve time** — timing display to monitor solver performance
+
+#### Example 8 – Dual-arm teleoperation
+
+Drive **two SO101 arms simultaneously** using both Meta Quest controllers. The left controller maps to the left arm and the right controller maps to the right arm via a single **10-DOF IK solver** on the dual-arm URDF.
+
+```bash
+python examples/8_dual_arm_teleop.py \
+  --left-port /dev/ttyACM0 --left-id L1 \
+  --right-port /dev/ttyACM1 --right-id L1 \
+  --ip-address <quest-ip>         # omit for auto-discovery
+```
+
+**Optional arguments:**
+
+| Flag | Default | Description |
+|---|---|---|
+| `--left-port` | `/dev/ttyACM0` | Serial port for the left SO101 arm |
+| `--left-id` | `L1` | Left arm follower ID |
+| `--right-port` | `/dev/ttyACM1` | Serial port for the right SO101 arm |
+| `--right-id` | `L1` | Right arm follower ID |
+| `--ip-address` | `None` | Meta Quest IP address (auto-discovered if omitted) |
+
+**Controls:**
+
+| Input | Action |
+|---|---|
+| **Hold LEFT + RIGHT grip** | Activate dual-arm teleoperation (dead man's switch) |
+| **Move left controller** | Left arm end-effector follows |
+| **Move right controller** | Right arm end-effector follows |
+| **Left / right trigger (hold)** | Close corresponding gripper |
+| **Button A** | Enable / disable both arms |
+| **Button B** | Send both arms to home position |
+| **Ctrl+C** | Exit |
+
+#### Example 9 – Dual-arm teleoperation with Neuracore data collection
+
+Same as example 8 but streams joint positions, gripper state, and two RGB camera frames to [Neuracore](https://neuracore.ai) for dataset collection. Recording episodes is controlled directly from the Quest controller.
+
+```bash
+python examples/9_collect_dual_teleop_data.py \
+  --left-port /dev/ttyACM0 --left-id L1 \
+  --right-port /dev/ttyACM1 --right-id L1 \
+  --ip-address <quest-ip> \
+  --dataset-name so101-dual-demo
+```
+
+**Prerequisites:** A Neuracore account. The script calls `nc.login()` on startup — set your credentials beforehand (see [Neuracore docs](https://neuracore.ai/docs)).
+
+**What it does:**
+- Connects to Neuracore, creates (or reuses) the named dataset, and streams live data at 30 Hz.
+- Logs left and right joint positions, gripper states, and two RGB camera frames (`rgb`, `rgb_2`) per episode.
+- Recording is controlled via **Button X** on the Quest — no web UI required.
+- Press **Ctrl+C** to shut down cleanly; any active recording is stopped automatically.
+
+**Optional arguments:**
+
+| Flag | Default | Description |
+|---|---|---|
+| `--left-port` | `/dev/ttyACM0` | Serial port for the left SO101 arm |
+| `--left-id` | `L1` | Left arm follower ID |
+| `--right-port` | `/dev/ttyACM1` | Serial port for the right SO101 arm |
+| `--right-id` | `L1` | Right arm follower ID |
+| `--ip-address` | `None` | Meta Quest IP address (auto-discovered if omitted) |
+| `--dataset-name` | `so101-dual-teleop-<timestamp>` | Dataset name in Neuracore |
+
+**Controls** (all example 8 controls, plus):
+
+| Input | Action |
+|---|---|
+| **Button X** | Start / stop Neuracore recording |
+
 ## Project structure
 
 ```
@@ -211,9 +335,16 @@ example_so101/
 │   ├── 4_rollout_neuracore_policy.py             # Policy rollout + leader teleop + Viser
 │   ├── 5_rollout_neuracore_policy_minimal.py     # Minimal policy rollout (terminal only)
 │   ├── 6_visualize_policy_from_dataset.py        # Policy preview from dataset (Viser only)
+│   ├── 7_tune_quest_teleop_params.py             # Meta Quest IK teleop + live parameter tuning (single arm)
+│   ├── 8_dual_arm_teleop.py                      # Dual-arm Meta Quest teleoperation (10-DOF IK)
+│   ├── 9_collect_dual_teleop_data.py             # Dual-arm teleop + Neuracore data collection
 │   └── common/                                   # Config, data manager, visualizer, threads, STS3215 driver
 ├── tests/                                        # Unit tests (no hardware required)
-├── so101_controller.py                           # SO101 follower controller
+├── meta_quest_teleop/                            # MetaQuestReader package (install with pip install -e)
+├── pink_ik_solver.py                             # Generic Pink IK solver (used by examples 7–9)
+├── vectorised_posture_task.py                    # Pink posture task helper (used by pink_ik_solver)
+├── so101_controller.py                           # SO101 single-arm follower controller
+├── so101_dual_controller.py                      # SO101 dual-arm follower controller (used by examples 8–9)
 ├── so101_description/urdf/                       # SO101 URDF (minimal + README for official mesh)
 ├── environment.yaml
 └── README.md

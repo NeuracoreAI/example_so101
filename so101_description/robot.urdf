@@ -303,6 +303,21 @@
     <axis xyz="0 0 0" />
   </joint>
 
+  <link name="eef_link">
+    <origin xyz="0 0 0" rpy="0 -0 0" />
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="1e-9" />
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0" />
+    </inertial>
+  </link>
+
+  <joint name="eef_joint" type="fixed">
+    <origin xyz="0 0 0" rpy="-1.57 -1.57 0" />
+    <parent link="gripper_frame_link" />
+    <child link="eef_link" />
+    <axis xyz="0 0 0" />
+  </joint>
   
   <link name="moving_jaw_so101_v1_link">
     <inertial>
