@@ -71,6 +71,13 @@ class CameraState:
         self.rgb_images: dict[str, np.ndarray] = {}
 
 
+class LeaderMappedStateDual:
+    def __init__(self) -> None:
+        self._lock = threading.Lock()
+        self.joint_angles: dict[str, np.ndarray | None] = {"left": None, "right": None}
+        self.gripper_open: dict[str, float | None] = {"left": None, "right": None}
+
+
 class DualDataManager:
     """State container for dual-arm SO101 teleoperation.
 
@@ -84,6 +91,7 @@ class DualDataManager:
         self._robot_state = RobotState()
         self._ik_state = IKState()
         self._camera_state = CameraState()
+        self._leader_mapped_state = LeaderMappedStateDual()
         self._shutdown_event = threading.Event()
         self._on_change_callback: Callable[[str, dict[str, Any], float], None] | None = None
 
@@ -312,6 +320,29 @@ class DualDataManager:
     def get_ik_success(self) -> bool:
         with self._ik_state._lock:
             return self._ik_state.success
+
+    # ── Leader Mapped State ─────────────────────────────────────────────────────
+
+    def set_leader_mapped_state(
+        self, side: str, joint_angles: np.ndarray, gripper_open: float
+    ) -> None:
+        if side not in ("left", "right"):
+            raise ValueError("side must be 'left' or 'right'")
+        with self._leader_mapped_state._lock:
+            self._leader_mapped_state.joint_angles[side] = joint_angles.copy()
+            self._leader_mapped_state.gripper_open[side] = float(gripper_open)
+
+    def get_leader_mapped_state(
+        self, side: str
+    ) -> tuple[np.ndarray | None, float | None]:
+        if side not in ("left", "right"):
+            raise ValueError("side must be 'left' or 'right'")
+        with self._leader_mapped_state._lock:
+            angles = self._leader_mapped_state.joint_angles[side]
+            return (
+                angles.copy() if angles is not None else None,
+                self._leader_mapped_state.gripper_open[side],
+            )
 
     # ── System ──────────────────────────────────────────────────────────────────
 
