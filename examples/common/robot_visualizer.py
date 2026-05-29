@@ -20,11 +20,12 @@ class RobotVisualizer:
     Encapsulates viser server setup, GUI controls, and update logic.
     """
 
-    def __init__(self, urdf_path: str) -> None:
+    def __init__(self, urdf_path: str, urdf_path_2: str | None = None) -> None:
         """Initialize the visualizer.
 
         Args:
-            urdf_path: Path to URDF file for robot visualization
+            urdf_path: Path to URDF file for the primary robot visualization
+            urdf_path_2: Optional path to a second robot URDF (dual-arm setups)
         """
         # Initialize viser server
         self._server = viser.ViserServer()
@@ -42,6 +43,22 @@ class RobotVisualizer:
             root_node_name="/robot_ghost",
             mesh_color_override=(0.2, 0.4, 1.0, 0.25),  # Blue with 60% opacity
         )
+
+        # Optional second robot (dual-arm)
+        self._urdf_vis_2: ViserUrdf | None = None
+        self._ghost_robot_urdf_2: ViserUrdf | None = None
+        if urdf_path_2 is not None:
+            urdf_2 = yourdfpy.URDF.load(urdf_path_2)
+            self._urdf_vis_2 = ViserUrdf(
+                self._server, urdf_2, root_node_name="/robot_actual_2"
+            )
+            ghost_urdf_2 = yourdfpy.URDF.load(urdf_path_2)
+            self._ghost_robot_urdf_2 = ViserUrdf(
+                self._server,
+                ghost_urdf_2,
+                root_node_name="/robot_ghost_2",
+                mesh_color_override=(1.0, 0.4, 0.2, 0.25),  # Orange tint for second arm
+            )
 
         # GUI handles (initialized as None, created on demand) - all private
         self._timing_handle = None
@@ -600,6 +617,21 @@ class RobotVisualizer:
         if self._joint_angles_handle is None:
             raise ValueError("Joint angles control not initialized")
         self._joint_angles_handle.value = text
+
+    def update_robot_pose_2(self, joint_config: np.ndarray) -> None:
+        """Update second robot visualization from joint configuration."""
+        if self._urdf_vis_2 is not None:
+            self._urdf_vis_2.update_cfg(joint_config)
+
+    def update_ghost_robot_pose_2(self, joint_config: np.ndarray) -> None:
+        """Update second ghost robot visualization from joint configuration."""
+        if self._ghost_robot_urdf_2 is not None:
+            self._ghost_robot_urdf_2.update_cfg(joint_config)
+
+    def update_ghost_robot_2_visibility(self, flag: bool) -> None:
+        """Update second ghost robot visibility."""
+        if self._ghost_robot_urdf_2 is not None:
+            self._ghost_robot_urdf_2.show_visual = flag
 
     def update_ghost_robot_pose(self, joint_config: np.ndarray) -> None:
         """Update ghost robot visualization from joint configuration.

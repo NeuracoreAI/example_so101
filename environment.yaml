@@ -2,10 +2,12 @@
 # No longer requires lerobot. The STS3215 motor driver uses feetech-servo-sdk (import scservo_sdk).
 name: so101-teleop
 channels:
+  - conda-forge
   - defaults
 dependencies:
   - python=3.10
   - pip
+  - pinocchio  # conda-forge build bundles liburdfdom and other shared libs correctly
   - pip:
       - numpy
       - scipy
@@ -17,3 +19,6 @@ dependencies:
       - pyserial
       - git+https://github.com/NeuracoreAI/neuracore.git@main
       - feetech-servo-sdk>=1.0.0,<2.0.0
+      - pin-pink
+      - qpsolvers[quadprog]
+      - git+https://github.com/NeuracoreAI/meta_quest_teleop.git@main

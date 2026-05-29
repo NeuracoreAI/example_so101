@@ -11,7 +11,19 @@ URDF_PATH = str(
     / "robot.urdf"
 )
 
-GRIPPER_FRAME_NAME = "gripper_frame_link"
+GRIPPER_FRAME_NAME = "eef_link"
+
+# Two-arm IK configuration (left/right hand TCP frames from URDF)
+DUAL_URDF_PATH = str(
+    Path(__file__).parent.parent.parent
+    / "so101_dual_description"
+    / "robot.urdf"
+)
+END_EFFECTOR_FRAME_NAMES = ["left_eef_link", "right_eef_link"]
+LEFT_END_EFFECTOR_FRAME_NAME = "left_eef_link"
+RIGHT_END_EFFECTOR_FRAME_NAME = "right_eef_link"
+LEFT_ARM_BASE_FRAME_NAME = "left_base_link"
+RIGHT_ARM_BASE_FRAME_NAME = "right_base_link"
 
 # Pink IK parameters (used if IK-based control is added later)
 SOLVER_NAME = "quadprog"
@@ -30,12 +42,12 @@ CONTROLLER_D_CUTOFF = 0.9
 GRIP_THRESHOLD = 0.9
 
 # Scaling factors for translation and rotation
-TRANSLATION_SCALE = 3.0
-ROTATION_SCALE = 2.0
+TRANSLATION_SCALE = 1.0
+ROTATION_SCALE = 1.0
 
 # Thread rates (Hz)
 CONTROLLER_DATA_RATE = 50.0
-IK_SOLVER_RATE = 250.0
+IK_SOLVER_RATE = 100.0
 VISUALIZATION_RATE = 60.0
 ROBOT_RATE = 100.0
 
@@ -43,15 +55,31 @@ JOINT_STATE_STREAMING_RATE = 100.0
 CAMERA_FRAME_STREAMING_RATE = 30.0
 
 # USB webcam (OpenCV)
-CAMERA_DEVICE_INDEX = 1  # 0 = first camera, 1 = second, etc.
+CAMERA_DEVICE_INDEX = 4  # 0 = first camera, 1 = second, etc.
 CAMERA_WIDTH = 640
 CAMERA_HEIGHT = 480
 
-# SO101 neutral pose (degrees): 5 body joints [shoulder_pan, shoulder_lift, elbow_flex, wrist_flex, wrist_roll]
-NEUTRAL_JOINT_ANGLES = [0.0, 90.0, -90.0, 0.0, 0.0]
+# Second camera (dual-arm setup)
+CAMERA_2_DEVICE_INDEX = 6
+CAMERA_2_WIDTH = 640
+CAMERA_2_HEIGHT = 480
 
+# SO101 neutral pose (degrees): 5 body joints [shoulder_pan, shoulder_lift, elbow_flex, wrist_flex, wrist_roll]
+NEUTRAL_JOINT_ANGLES = [0.0, -10.0, 20.0, 25.0, 0.0]
+NEUTRAL_JOINT_ANGLES_2 = [0.0, -10.0, 20.0, 25.0, 0.0]
 # Posture task cost vector (one weight per joint)
-POSTURE_COST_VECTOR = [0.0, 0.0, 0.0, 0.05, 0.0]
+POSTURE_COST_VECTOR = [0.0, 0.0, 0.0, 0.0, 0.0]
+POSTURE_COST_VECTOR_2 = [0.0, 0.0, 0.0, 0.0, 0.0]
+
+# Dual-arm neutral configuration (10 body joints: left×5, right×5)
+NEUTRAL_JOINT_ANGLES_DUAL = [*NEUTRAL_JOINT_ANGLES, *NEUTRAL_JOINT_ANGLES]
+POSTURE_COST_VECTOR_DUAL = [*POSTURE_COST_VECTOR, *POSTURE_COST_VECTOR]
+
+# yourdfpy order for dual URDF matches "our" order exactly — identity mapping.
+# "Our" dual order: [left_pan, left_lift, left_elbow, left_wrist_flex, left_wrist_roll,
+#                    left_gripper, right_pan, right_lift, right_elbow, right_wrist_flex,
+#                    right_wrist_roll, right_gripper]
+DUAL_URDF_JOINT_ORDER_FROM_OURS = np.arange(12, dtype=np.int32)
 
 POLICY_EXECUTION_RATE = 100.0
 PREDICTION_HORIZON_EXECUTION_RATIO = 0.8

@@ -127,6 +127,11 @@ class DataManager:
         self._camera_state = CameraState()
         self._leader_mapped_state = LeaderMappedState()
 
+        # Scaling parameters for IK (written by main thread, read by IK thread)
+        self._scaling_lock = threading.Lock()
+        self._translation_scale: float = 1.0
+        self._rotation_scale: float = 1.0
+
         # System state
         self._shutdown_event = threading.Event()
 
@@ -593,6 +598,21 @@ class DataManager:
             )
             gripper = self._leader_mapped_state.gripper_open
             return (angles, gripper)
+
+    # ============================================================================
+    # Scaling Parameters
+    # ============================================================================
+
+    def set_scaling_params(self, translation_scale: float, rotation_scale: float) -> None:
+        """Set IK translation and rotation scaling (thread-safe)."""
+        with self._scaling_lock:
+            self._translation_scale = translation_scale
+            self._rotation_scale = rotation_scale
+
+    def get_scaling_params(self) -> tuple[float, float]:
+        """Get IK translation and rotation scaling (thread-safe)."""
+        with self._scaling_lock:
+            return self._translation_scale, self._rotation_scale
 
     # ============================================================================
     # System State Methods
