@@ -1,19 +1,14 @@
 """IK solver thread - solves IK and updates state."""
 
-import sys
 import time
 import traceback
-from pathlib import Path
 
 import numpy as np
 
-# Repo root so pink_ik_solver is importable
-sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 from common.configs import IK_SOLVER_RATE
 from common.data_manager import DataManager, RobotActivityState
+from common.pink_ik_solver import PinkIKSolver
 from common.utils import scale_and_add_delta_transform
-
-from pink_ik_solver import PinkIKSolver
 
 # Pinocchio (reduced 5-DOF) order matches DataManager "our" order exactly:
 # [shoulder_pan, shoulder_lift, elbow_flex, wrist_flex, wrist_roll]

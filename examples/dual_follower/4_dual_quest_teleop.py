@@ -19,10 +19,11 @@ import time
 import traceback
 from pathlib import Path
 
-import cv2
 import numpy as np
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
+_root = Path(__file__).resolve().parent.parent.parent
+sys.path.insert(0, str(_root))
+sys.path.insert(0, str(_root / "examples"))
 
 from common.configs import (
     CAMERA_2_DEVICE_INDEX,
@@ -57,12 +58,13 @@ from common.configs import (
 )
 from common.data_manager_dual import DualDataManager, RobotActivityState
 # from common.robot_visualizer import RobotVisualizer
+from common.threads.dual_camera import dual_camera_thread
 from common.threads.dual_ik_solver import dual_ik_solver_thread
 from common.threads.dual_joint_state import dual_joint_state_thread
 from meta_quest_teleop.reader import MetaQuestReader
 
-from pink_ik_solver import PinkIKSolver
-from so101_dual_controller import SO101DualController
+from common.pink_ik_solver import PinkIKSolver
+from common.so101_dual_controller import SO101DualController
 
 # ── CLI ───────────────────────────────────────────────────────────────────────
 
@@ -158,74 +160,21 @@ ik_thread.start()
 
 # ── Camera threads ────────────────────────────────────────────────────────────
 
-# def _run_camera(
-#     dm: DualDataManager,
-#     camera_name: str,
-#     device_index: int,
-#     width: int,
-#     height: int,
-# ) -> None:
-#     """Camera capture loop writing to DualDataManager with a named key."""
-#     print(f"📷 Camera thread started (device {device_index}, name='{camera_name}')")
-#     dt = 1.0 / CAMERA_FRAME_STREAMING_RATE
-#     cap = None
-#     try:
-#         cap = cv2.VideoCapture(device_index)
-#         if not cap.isOpened():
-#             print(f"❌ Could not open camera device {device_index}")
-#             dm.request_shutdown()
-#             return
-#         cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-#         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
-#         cap.set(cv2.CAP_PROP_FPS, CAMERA_FRAME_STREAMING_RATE)
-#         consecutive_failures = 0
-#         while not dm.is_shutdown_requested():
-#             t0 = time.time()
-#             ret, frame = cap.read()
-#             if not ret or frame is None:
-#                 consecutive_failures += 1
-#                 if consecutive_failures >= 30:
-#                     cap.release()
-#                     time.sleep(1.0)
-#                     cap = cv2.VideoCapture(device_index)
-#                     if cap.isOpened():
-#                         cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-#                         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
-#                     consecutive_failures = 0
-#                 time.sleep(dt)
-#                 continue
-#             consecutive_failures = 0
-#             rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-#             rgb = cv2.rotate(rgb, cv2.ROTATE_180)
-#             dm.set_rgb_image(rgb, camera_name)
-#             elapsed = time.time() - t0
-#             if dt - elapsed > 0:
-#                 time.sleep(dt - elapsed)
-#     except Exception as e:
-#         print(f"❌ Camera thread error ({camera_name}): {e}")
-#         traceback.print_exc()
-#         dm.request_shutdown()
-#     finally:
-#         if cap is not None:
-#             cap.release()
-#         print(f"📷 Camera thread stopped ({camera_name})")
-
-
-# cam1_thread = threading.Thread(
-#     target=_run_camera,
-#     args=(data_manager, "rgb", CAMERA_DEVICE_INDEX, CAMERA_WIDTH, CAMERA_HEIGHT),
-#     daemon=True,
-# )
-# cam2_thread = threading.Thread(
-#     target=_run_camera,
-#     args=(data_manager, "rgb_2", CAMERA_2_DEVICE_INDEX, CAMERA_2_WIDTH, CAMERA_2_HEIGHT),
-#     daemon=True,
-# )
-# cam1_thread.start()
-# cam2_thread.start()
+cam1_thread = threading.Thread(
+    target=dual_camera_thread,
+    args=(data_manager, "rgb", CAMERA_DEVICE_INDEX, CAMERA_WIDTH, CAMERA_HEIGHT),
+    daemon=True,
+)
+cam2_thread = threading.Thread(
+    target=dual_camera_thread,
+    args=(data_manager, "rgb_2", CAMERA_2_DEVICE_INDEX, CAMERA_2_WIDTH, CAMERA_2_HEIGHT),
+    daemon=True,
+)
+cam1_thread.start()
+cam2_thread.start()
 
 # ── Visualizer ────────────────────────────────────────────────────────────────
-# DISABLED: visualizer commented out to test if Viser causes control latency.
+# DISABLED: Optional visualiser
 
 # print("\n🖥️  Starting visualization...")
 # visualizer = RobotVisualizer(urdf_path=DUAL_URDF_PATH)

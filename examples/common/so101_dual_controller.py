@@ -6,15 +6,10 @@ unified lifecycle interface. Each arm's control loop runs independently
 in its own background thread via SO101Controller.
 """
 
-import sys
-from pathlib import Path
-
 import numpy as np
 
-sys.path.insert(0, str(Path(__file__).resolve().parent / "examples"))
-from common.sts3215_bus import SO101FollowerDriver  # noqa: F401 (re-exported via SO101Controller)
-
-from so101_controller import SO101Controller
+from .sts3215_bus import SO101FollowerDriver  # noqa: F401 (re-exported via SO101Controller)
+from .so101_controller import SO101Controller
 
 
 class SO101DualController:

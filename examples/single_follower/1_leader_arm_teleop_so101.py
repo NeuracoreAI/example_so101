@@ -13,7 +13,7 @@ from pathlib import Path
 import numpy as np
 
 # Repo root for so101_controller; examples for common.*
-_root = Path(__file__).resolve().parent.parent
+_root = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(_root))
 sys.path.insert(0, str(_root / "examples"))
 
@@ -23,6 +23,7 @@ from common.configs import (
     ROBOT_RATE,
     SO101_DIRECTIONS,
     SO101_FIXED_JOINTS,
+    SO101_GRIPPER_OFFSET,
     SO101_JOINT_LIMITS_DEG,
     SO101_OFFSETS_DEG,
     URDF_JOINT_ORDER_FROM_OURS,
@@ -82,6 +83,7 @@ def main() -> None:
         follower_directions=SO101_DIRECTIONS,
         leader_to_follower_joint=LEADER_TO_SO101_JOINT,
         fixed_joints=SO101_FIXED_JOINTS,
+        gripper_offset=SO101_GRIPPER_OFFSET,
     )
     print("\n🦾 Connecting to SO101 leader arm...")
     try:
@@ -102,7 +104,7 @@ def main() -> None:
     if use_real_robot:
         from common.threads.joint_state import joint_state_thread
 
-        from so101_controller import SO101Controller
+        from common.so101_controller import SO101Controller
 
         print("\n🤖 Initializing SO101 follower controller...")
         robot_controller = SO101Controller(

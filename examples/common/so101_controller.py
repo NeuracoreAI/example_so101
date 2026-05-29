@@ -6,17 +6,13 @@ Feetech bus. Joint angles are in degrees; gripper is 0–1 (open).
 No AgileX or Piper references; SO101 only.
 """
 
-import sys
 import threading
 import time
-from pathlib import Path
 from typing import Any
 
 import numpy as np
 
-# Make examples/common importable from the repo root
-sys.path.insert(0, str(Path(__file__).resolve().parent / "examples"))
-from common.sts3215_bus import SO101FollowerDriver  # noqa: E402
+from .sts3215_bus import SO101FollowerDriver
 
 
 # SO101 motor keys in order: 5 body joints + gripper

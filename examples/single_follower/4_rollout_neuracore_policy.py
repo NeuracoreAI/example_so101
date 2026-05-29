@@ -19,7 +19,7 @@ import neuracore as nc
 import numpy as np
 from neuracore_types import DataType, EmbodimentDescription
 
-_root = Path(__file__).resolve().parent.parent
+_root = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(_root))
 sys.path.insert(0, str(_root / "examples"))
 
@@ -38,6 +38,7 @@ from common.configs import (  # noqa: E402
     ROBOT_RATE,
     SO101_DIRECTIONS,
     SO101_FIXED_JOINTS,
+    SO101_GRIPPER_OFFSET,
     SO101_JOINT_LIMITS_DEG,
     SO101_OFFSETS_DEG,
     TARGETING_POSE_TIME_THRESHOLD,
@@ -65,7 +66,7 @@ from common.robot_visualizer import RobotVisualizer  # noqa: E402
 from common.threads.camera import camera_thread  # noqa: E402
 from common.threads.joint_state import joint_state_thread  # noqa: E402
 from common.threads.leader_arm_controller import leader_arm_controller_thread  # noqa: E402
-from so101_controller import SO101Controller  # noqa: E402
+from common.so101_controller import SO101Controller  # noqa: E402
 
 
 def _teleop_loop(
@@ -676,6 +677,7 @@ def main() -> None:
         follower_directions=SO101_DIRECTIONS,
         leader_to_follower_joint=LEADER_TO_SO101_JOINT,
         fixed_joints=SO101_FIXED_JOINTS,
+        gripper_offset=SO101_GRIPPER_OFFSET,
     )
     try:
         leader.connect(calibrate=False)

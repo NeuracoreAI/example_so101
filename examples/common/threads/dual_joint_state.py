@@ -5,18 +5,14 @@ Reads joint angles from one SO101Controller, writes them into the shared
 IK target angles to the physical arm when teleop is active.
 """
 
-import sys
 import time
 import traceback
-from pathlib import Path
 
 import numpy as np
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent.parent))
 from common.configs import JOINT_STATE_STREAMING_RATE
 from common.data_manager_dual import DualDataManager, RobotActivityState
-
-from so101_controller import SO101Controller
+from common.so101_controller import SO101Controller
 
 _BODY_DOF = 5  # SO101 has 5 actuated body joints per arm
 
