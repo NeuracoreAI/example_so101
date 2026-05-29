@@ -9,19 +9,20 @@ from typing import cast
 import cv2
 import neuracore as nc
 import numpy as np
-from common.configs import (
+from neuracore_types import DataType, SynchronizedPoint
+from tqdm import tqdm
+
+_root = Path(__file__).resolve().parent.parent.parent
+sys.path.insert(0, str(_root))
+sys.path.insert(0, str(_root / "examples"))
+
+from common.configs import (  # noqa: E402
     GRIPPER_LOGGING_NAME,
     JOINT_NAMES,
     NEUTRAL_JOINT_ANGLES,
     ROBOT_RATE,
 )
-from neuracore_types import DataType, SynchronizedPoint
-from tqdm import tqdm
-
-# Add parent directory to path so we can import `so101_controller`
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
-from so101_controller import SO101Controller
+from common.so101_controller import SO101Controller  # noqa: E402
 
 
 def main() -> None:

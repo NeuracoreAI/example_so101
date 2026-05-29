@@ -1,14 +1,20 @@
 # SO101 Leader → SO101 Follower Teleop (SO-ARM100)
 
-This project is an example of **SO101-to-SO101 teleoperation**: you use one SO101 arm as a **leader** and drive either the on-screen SO101 URDF or a second SO101 **follower** arm. Everything in this directory is for the SO101 (SO-ARM100) only.
+This project contains examples of **SO101-to-SO101 teleoperation** using the SO101 (SO-ARM100) arm. Examples are split into two groups:
+
+- **`single_follower/`** — one leader arm drives one follower arm (or the on-screen URDF). Covers basic teleop, Neuracore data collection, episode replay, policy rollout, and Meta Quest IK control.
+- **`dual_follower/`** — two leader arms (or two Meta Quest controllers) drive two follower arms simultaneously. Covers dual leader teleop, Neuracore data collection, episode replay, and dual-arm Meta Quest IK control.
+
+All examples can be run with only the hardware you have — a physical follower arm and a second set of arms are both optional, and Meta Quest is only needed for the IK-based examples.
 
 ## Prerequisites
 
 - Python 3.10+
 - Conda (recommended)
-- **Leader**: One SO101 arm (LeRobot SO101 leader) with calibration
-- **Follower** (optional): Second SO101 arm for real-robot teleop (USB, motors configured)
-- **Meta Quest** (optional): Meta Quest 2/3/Pro headset for Quest-based IK teleop (example 7)
+- **Leader arm** *(required)*: One SO101 arm (LeRobot SO101 leader) with calibration — needed for all `single_follower` examples
+- **Follower arm** *(optional)*: Second SO101 arm for real-robot teleop; omit to drive the on-screen URDF only
+- **Second leader + follower pair** *(optional)*: Two additional SO101 arms (one leader, one follower) for the `dual_follower` examples
+- **Meta Quest** *(optional)*: Meta Quest 2/3/Pro headset — required only for `single_follower/7_tune_quest_teleop_params.py` and all `dual_follower` Quest examples (`4_dual_quest_teleop.py`, `5_collect_dual_quest_teleop.py`)
 
 ## Installation
 
@@ -81,23 +87,31 @@ Use the same `--teleop.id` when running the example (`--leader-id`).
 - Leader uses the calibration id (`--leader-id`).
 - Follower uses the id you gave when running `lerobot-setup-motors` or when calibrating the follower (`--follower-id`).
 
-## Usage
+## Configuration
 
-### URDF only (no real follower)
+- **URDF**: `examples/common/configs.py` sets `URDF_PATH` to `so101_description/urdf/so101_minimal.urdf`. For accurate mesh, use the official [SO-ARM100](https://github.com/TheRobotStudio/SO-ARM100) URDF (see `so101_description/urdf/README.md`).
+- **Neutral pose**: `NEUTRAL_JOINT_ANGLES` in `configs.py` (5 body joints in degrees).
+- **Joint names**: SO101 uses `shoulder_pan`, `shoulder_lift`, `elbow_flex`, `wrist_flex`, `wrist_roll` (+ gripper).
+- **Camera (USB webcam)**: The camera thread in `examples/common/threads/camera.py` uses OpenCV and a basic USB webcam. In `configs.py` you can set `CAMERA_DEVICE_INDEX` (0 = first camera), `CAMERA_WIDTH`, `CAMERA_HEIGHT`, and `CAMERA_FRAME_STREAMING_RATE`. Start the camera thread from your script if you need RGB frames (e.g. for logging or visualization).
+
+## Usage: Single Leader and Single Follower
+
+### 1. Leader Arm Teleop
+
+#### URDF only (no real follower)
 
 Drive the SO101 URDF in the GUI with the leader arm:
 
 ```bash
-cd example_so101/examples
-python 1_leader_arm_teleop_so101.py --leader-port /dev/ttyACM0 --leader-id my_awesome_leader_arm
+python examples/single_follower/1_leader_arm_teleop_so101.py --leader-port /dev/ttyACM0 --leader-id my_awesome_leader_arm
 ```
 
-### Real SO101 follower
+#### Real SO101 follower
 
 Drive the physical follower arm with the leader:
 
 ```bash
-python 1_leader_arm_teleop_so101.py --real-robot \
+python examples/single_follower/1_leader_arm_teleop_so101.py --real-robot \
   --leader-port /dev/ttyACM0 --leader-id my_awesome_leader_arm \
   --follower-port /dev/ttyUSB0 --follower-id my_awesome_follower_arm
 ```
@@ -106,20 +120,12 @@ python 1_leader_arm_teleop_so101.py --real-robot \
 - **Home** sends the follower to the neutral pose defined in `configs.py`.
 - **Ctrl+C** shuts down cleanly.
 
-## Configuration
-
-- **URDF**: `examples/common/configs.py` sets `URDF_PATH` to `so101_description/urdf/so101_minimal.urdf`. For accurate mesh, use the official [SO-ARM100](https://github.com/TheRobotStudio/SO-ARM100) URDF (see `so101_description/urdf/README.md`).
-- **Neutral pose**: `NEUTRAL_JOINT_ANGLES` in `configs.py` (5 body joints in degrees).
-- **Joint names**: SO101 uses `shoulder_pan`, `shoulder_lift`, `elbow_flex`, `wrist_flex`, `wrist_roll` (+ gripper).
-- **Camera (USB webcam)**: The camera thread in `examples/common/threads/camera.py` uses OpenCV and a basic USB webcam. In `configs.py` you can set `CAMERA_DEVICE_INDEX` (0 = first camera), `CAMERA_WIDTH`, `CAMERA_HEIGHT`, and `CAMERA_FRAME_STREAMING_RATE`. Start the camera thread from your script if you need RGB frames (e.g. for logging or visualization).
-
-
-### Collect teleop data with Neuracore
+### 2. Collect teleop data with Neuracore
 
 Stream and record teleoperation data (joint positions, gripper, RGB camera) to [Neuracore](https://neuracore.ai) for training:
 
 ```bash
-python examples/2_collect_teleop_data_with_neuracore.py \
+python examples/single_follower/2_collect_teleop_data_with_neuracore.py \
   --leader-port /dev/ttyACM0 --leader-id my_awesome_leader_arm \
   --follower-port /dev/ttyACM1 --follower-id my_awesome_follower_arm \
   --dataset-name so101-demo
@@ -146,12 +152,12 @@ python examples/2_collect_teleop_data_with_neuracore.py \
 
 ### 3. Replay Neuracore Episodes
 
-**Script**: `examples/3_replay_neuracore_episodes.py`
+**Script**: `examples/single_follower/3_replay_neuracore_episodes.py`
 
 Replay recorded episodes from a Neuracore dataset on the physical robot.
 
 ```bash
-python3 examples/3_replay_neuracore_episodes.py --dataset-name <dataset-name> --frequency <hz> --follower-port <follower-port> --follower-id my_awesome_follower_arm --episode-index <idx>
+python3 examples/single_follower/3_replay_neuracore_episodes.py --dataset-name <dataset-name> --frequency <hz> --follower-port <follower-port> --follower-id my_awesome_follower_arm --episode-index <idx>
 ```
 
 **Arguments**:
@@ -171,7 +177,7 @@ After collecting data with example 2 and training a policy in Neuracore, use the
 **Example 4 – interactive rollout with leader teleop and Viser**
 
 ```bash
-python examples/4_rollout_neuracore_policy.py \
+python examples/single_follower/4_rollout_neuracore_policy.py \
   --train-run-name YOUR_RUN_NAME \
   --leader-port /dev/ttyACM0 --leader-id my_awesome_leader_arm \
   --follower-port /dev/ttyACM1 --follower-id my_awesome_follower_arm
@@ -185,7 +191,7 @@ python examples/4_rollout_neuracore_policy.py \
 **Example 5 – minimal terminal-only rollout**
 
 ```bash
-python examples/5_rollout_neuracore_policy_minimal.py \
+python examples/single_follower/5_rollout_neuracore_policy_minimal.py \
   --train-run-name YOUR_RUN_NAME \
   --follower-port /dev/ttyACM1 --follower-id my_awesome_follower_arm
 ```
@@ -195,23 +201,23 @@ No leader arm or GUI: enables the follower, homes, then loops predict → execut
 **Example 6 – visualize policy from a dataset**
 
 ```bash
-python examples/6_visualize_policy_from_dataset.py \
+python examples/single_follower/6_visualize_policy_from_dataset.py \
   --dataset-name so101-demo \
   --train-run-name YOUR_RUN_NAME
 ```
 
 Loads a random synchronized dataset step, runs the policy, and animates the predicted horizon in Viser (no real robot).
 
-### Dual Leader and Dual Follower Setup
+## Usage: Dual Leader and Dual Follower Setup
 
 Use two SO101 leader arms to drive two SO101 follower arms simultaneously. The left leader maps directly to the left follower and the right leader maps directly to the right follower — no IK involved. Each pair uses an independent joint offset configuration (`SO101_OFFSETS_DEG` for the left pair, `SO101_OFFSETS_DEG_2` for the right pair).
 
 **Hardware required:** four SO101 arms (two leaders, two followers) on four separate USB ports.
 
-#### Example 1 – Dual leader → dual follower teleop
+### Example 1 – Dual leader → dual follower teleop
 
 ```bash
-python examples/1_dual_leader_teleop.py \
+python examples/dual_follower/1_dual_leader_teleop.py \
   --left-leader-port /dev/ttyACM0 --left-leader-id my_awesome_left_leader \
   --right-leader-port /dev/ttyACM2 --right-leader-id my_awesome_right_leader \
   --left-follower-port /dev/ttyACM1 --left-follower-id my_awesome_left_follower \
@@ -242,12 +248,12 @@ Omit `--real-robot` to drive the dual-arm URDF only (no follower hardware needed
 - **Home** both arms
 - **Ghost robot** preview of the leader-commanded target pose
 
-#### Example 2 – Dual leader teleop with Neuracore data collection
+### Example 2 – Dual leader teleop with Neuracore data collection
 
 Same as example 1 (always drives real followers) but streams joint positions, gripper states, and two RGB camera frames to [Neuracore](https://neuracore.ai) for dataset collection. Recording is controlled from the keyboard.
 
 ```bash
-python examples/2_collect_dual_leader_teleop.py \
+python examples/dual_follower/2_collect_dual_leader_teleop.py \
   --left-leader-port /dev/ttyACM0 --left-leader-id my_awesome_left_leader \
   --right-leader-port /dev/ttyACM2 --right-leader-id my_awesome_right_leader \
   --left-follower-port /dev/ttyACM1 --left-follower-id my_awesome_left_follower \
@@ -286,12 +292,12 @@ python examples/2_collect_dual_leader_teleop.py \
 | `r` | Start / stop Neuracore recording |
 | `Ctrl+C` | Exit |
 
-#### Example 3 – Replay dual-arm Neuracore episodes
+### Example 3 – Replay dual-arm Neuracore episodes
 
 Replay recorded dual-arm episodes from a Neuracore dataset on the physical robot. Both arms move simultaneously following the recorded trajectories.
 
 ```bash
-python examples/3_replay_dual_arm_episodes.py \
+python examples/dual_follower/3_replay_dual_arm_episodes.py \
   --dataset-name so101-dual-demo \
   --frequency 30 \
   --left-port /dev/ttyACM0 --left-id my_awesome_left_follower \
@@ -313,9 +319,9 @@ python examples/3_replay_dual_arm_episodes.py \
 | `--right-id` | `my_awesome_right_follower` | Right follower ID |
 | `--episode-index` | `0` | Episode to replay; `-1` replays all episodes in sequence |
 
-### Meta Quest Teleop
+## Usage: Meta Quest Teleop
 
-#### Prerequisites
+### Prerequisites
 
 The following packages are installed automatically by `environment.yaml` when you create the conda environment:
 
@@ -324,19 +330,19 @@ The following packages are installed automatically by `environment.yaml` when yo
 
 No extra installation steps are needed beyond the standard `conda env create -f environment.yaml`.
 
-#### Connecting the Meta Quest headset
+### Connecting the Meta Quest headset
 
 The companion app must be running on the headset (see the `meta_quest_teleop` README for setup). Two connection modes are supported:
 
 - **USB (recommended)** — connect the headset via USB and omit `--ip-address`; the device will be auto-discovered.
 - **WiFi** — ensure the headset is on the same network as your machine and pass `--ip-address <quest-ip>`.
 
-#### Example 7 – IK parameter tuning (single arm)
+### Example 7 – Single Arm - IK parameter tuning
 
 Drive the SO101 follower arm using a **Meta Quest controller** (right hand). Unlike the leader-arm examples, this uses **Pink IK** to convert the Quest controller's cartesian pose into SO101 joint angles in real time. A Viser GUI lets you tune the 1€ filter and IK parameters live.
 
 ```bash
-python examples/7_tune_quest_teleop_params.py \
+python examples/single_follower/7_tune_quest_teleop_params.py \
   --port /dev/ttyACM0 \
   --follower-id my_awesome_follower_arm \
   --ip-address <quest-ip>         # omit for auto-discovery
@@ -371,12 +377,12 @@ python examples/7_tune_quest_teleop_params.py \
 - **Ghost robot** — translucent preview of the IK target (where the robot is aiming, not where it currently is)
 - **IK solve time** — timing display to monitor solver performance
 
-#### Example 8 – Dual-arm teleoperation
+### Example 4 – Dual-arm teleoperation
 
 Drive **two SO101 arms simultaneously** using both Meta Quest controllers. The left controller maps to the left arm and the right controller maps to the right arm via a single **10-DOF IK solver** on the dual-arm URDF.
 
 ```bash
-python examples/8_dual_arm_teleop.py \
+python examples/dual_follower/4_dual_quest_teleop.py \
   --left-port /dev/ttyACM0 --left-id L1 \
   --right-port /dev/ttyACM1 --right-id L1 \
   --ip-address <quest-ip>         # omit for auto-discovery
@@ -404,12 +410,12 @@ python examples/8_dual_arm_teleop.py \
 | **Button B** | Send both arms to home position |
 | **Ctrl+C** | Exit |
 
-#### Example 9 – Dual-arm teleoperation with Neuracore data collection
+### Example 5 – Dual-arm teleoperation with Neuracore data collection
 
-Same as example 8 but streams joint positions, gripper state, and two RGB camera frames to [Neuracore](https://neuracore.ai) for dataset collection. Recording episodes is controlled directly from the Quest controller.
+Same as example 4 but streams joint positions, gripper state, and two RGB camera frames to [Neuracore](https://neuracore.ai) for dataset collection. Recording episodes is controlled directly from the Quest controller.
 
 ```bash
-python examples/9_collect_dual_teleop_data.py \
+python examples/dual_follower/5_collect_dual_quest_teleop.py \
   --left-port /dev/ttyACM0 --left-id L1 \
   --right-port /dev/ttyACM1 --right-id L1 \
   --ip-address <quest-ip> \
@@ -446,22 +452,27 @@ python examples/9_collect_dual_teleop_data.py \
 ```
 example_so101/
 ├── examples/
-│   ├── 1_dual_leader_teleop.py                   # Dual SO101 leaders → dual SO101 followers (URDF or real robot)
-│   ├── 2_collect_dual_leader_teleop.py           # Dual leader teleop + Neuracore data collection
-│   ├── 3_replay_dual_arm_episodes.py             # Replay dual-arm Neuracore episodes on real hardware
-│   ├── 4_rollout_neuracore_policy.py             # Policy rollout + leader teleop + Viser
-│   ├── 5_rollout_neuracore_policy_minimal.py     # Minimal policy rollout (terminal only)
-│   ├── 6_visualize_policy_from_dataset.py        # Policy preview from dataset (Viser only)
-│   ├── 7_tune_quest_teleop_params.py             # Meta Quest IK teleop + live parameter tuning (single arm)
-│   ├── 8_dual_arm_teleop.py                      # Dual-arm Meta Quest teleoperation (10-DOF IK)
-│   ├── 9_collect_dual_teleop_data.py             # Dual-arm Meta Quest teleop + Neuracore data collection
+│   ├── single_follower/
+│   │   ├── 1_leader_arm_teleop_so101.py          # SO101 leader → SO101 follower (URDF or real robot)
+│   │   ├── 2_collect_teleop_data_with_neuracore.py  # Leader teleop + Neuracore data collection
+│   │   ├── 3_replay_neuracore_episodes.py        # Replay Neuracore episodes on real hardware
+│   │   ├── 4_rollout_neuracore_policy.py         # Policy rollout + leader teleop + Viser
+│   │   ├── 5_rollout_neuracore_policy_minimal.py # Minimal policy rollout (terminal only)
+│   │   ├── 6_visualize_policy_from_dataset.py    # Policy preview from dataset (Viser only)
+│   │   └── 7_tune_quest_teleop_params.py         # Meta Quest IK teleop + live parameter tuning
+│   ├── dual_follower/
+│   │   ├── 1_dual_leader_teleop.py               # Dual SO101 leaders → dual SO101 followers (URDF or real robot)
+│   │   ├── 2_collect_dual_leader_teleop.py       # Dual leader teleop + Neuracore data collection
+│   │   ├── 3_replay_dual_arm_episodes.py         # Replay dual-arm Neuracore episodes on real hardware
+│   │   ├── 4_dual_quest_teleop.py                # Dual-arm Meta Quest teleoperation (10-DOF IK)
+│   │   └── 5_collect_dual_quest_teleop.py        # Dual-arm Meta Quest teleop + Neuracore data collection
 │   └── common/                                   # Config, data manager, visualizer, threads, STS3215 driver
+├── scripts/                                      # Utility scripts (port finder, Viser debug controls)
 ├── tests/                                        # Unit tests (no hardware required)
-├── meta_quest_teleop/                            # MetaQuestReader package (install with pip install -e)
-├── pink_ik_solver.py                             # Generic Pink IK solver (used by examples 7–9)
+├── pink_ik_solver.py                             # Generic Pink IK solver (used by Quest examples)
 ├── vectorised_posture_task.py                    # Pink posture task helper (used by pink_ik_solver)
 ├── so101_controller.py                           # SO101 single-arm follower controller
-├── so101_dual_controller.py                      # SO101 dual-arm follower controller (used by examples 8–9)
+├── so101_dual_controller.py                      # SO101 dual-arm follower controller
 ├── so101_description/urdf/                       # SO101 URDF (minimal + README for official mesh)
 ├── environment.yaml
 └── README.md

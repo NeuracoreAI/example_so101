@@ -38,6 +38,7 @@ class LerobotSO101LeaderArm:
         self._follower_directions: np.ndarray | None = None
         self._leader_to_follower_joint: dict[int, int] | None = None
         self._fixed_joints: dict[int, float] = {}
+        self._gripper_offset: float = 0.0
 
     def connect(self, calibrate: bool = False) -> None:
         """Connect to the leader arm. Raises if port or calibration fails."""
@@ -58,6 +59,7 @@ class LerobotSO101LeaderArm:
         follower_directions: np.ndarray,
         leader_to_follower_joint: dict[int, int] | list[int],
         fixed_joints: dict[int, float] | None = None,
+        gripper_offset: float = 0.0,
     ) -> None:
         """Set follower mapping so read_mapped() returns follower-space angles.
 
@@ -85,6 +87,7 @@ class LerobotSO101LeaderArm:
             else {i: v for i, v in enumerate(leader_to_follower_joint)}
         )
         self._fixed_joints = dict(fixed_joints) if fixed_joints else {}
+        self._gripper_offset = float(gripper_offset)
 
     def read_mapped(self) -> tuple[np.ndarray, float]:
         """Read leader and return follower-space joint angles (degrees) and gripper open (0–1).
@@ -115,7 +118,7 @@ class LerobotSO101LeaderArm:
                 lo,
                 hi,
             )
-        gripper = float(np.clip(raw.get(GRIPPER_ACTION_KEY, 50.0) / 100.0, 0.0, 1.0))
+        gripper = float(np.clip((raw.get(GRIPPER_ACTION_KEY, 50.0) + self._gripper_offset) / 100.0, 0.0, 1.0))
         return angles, gripper
 
     @property

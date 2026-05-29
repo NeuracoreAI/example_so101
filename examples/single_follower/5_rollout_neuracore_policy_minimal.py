@@ -17,7 +17,7 @@ from pathlib import Path
 import neuracore as nc
 import numpy as np
 
-_root = Path(__file__).resolve().parent.parent
+_root = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(_root))
 sys.path.insert(0, str(_root / "examples"))
 
@@ -41,7 +41,7 @@ from common.policy_helpers import (  # noqa: E402
 from common.policy_state import PolicyState  # noqa: E402
 from common.threads.camera import camera_thread  # noqa: E402
 from common.threads.joint_state import joint_state_thread  # noqa: E402
-from so101_controller import SO101Controller  # noqa: E402
+from common.so101_controller import SO101Controller  # noqa: E402
 
 
 def run_policy(

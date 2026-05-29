@@ -12,11 +12,12 @@ import numpy as np
 from neuracore_types import DataType, SynchronizedPoint
 from tqdm import tqdm
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
-sys.path.insert(0, str(Path(__file__).parent.parent / "examples"))
+_root = Path(__file__).resolve().parent.parent.parent
+sys.path.insert(0, str(_root))
+sys.path.insert(0, str(_root / "examples"))
 
 from common.configs import NEUTRAL_JOINT_ANGLES, ROBOT_RATE  # type: ignore  # noqa: E402
-from so101_dual_controller import SO101DualController
+from common.so101_dual_controller import SO101DualController
 
 _BODY_JOINT_SUFFIXES = ["shoulder_pan", "shoulder_lift", "elbow_flex", "wrist_flex", "wrist_roll"]
 _LEFT_JOINT_NAMES = [f"left_{s}" for s in _BODY_JOINT_SUFFIXES]

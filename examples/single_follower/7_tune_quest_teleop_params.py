@@ -16,7 +16,9 @@ from pathlib import Path
 
 import numpy as np
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
+_root = Path(__file__).resolve().parent.parent.parent
+sys.path.insert(0, str(_root))
+sys.path.insert(0, str(_root / "examples"))
 
 from common.configs import (
     CAMERA_FRAME_STREAMING_RATE,
@@ -51,8 +53,8 @@ from common.threads.joint_state import joint_state_thread
 from common.threads.quest_reader import quest_reader_thread
 from meta_quest_teleop.reader import MetaQuestReader
 
-from pink_ik_solver import PinkIKSolver
-from so101_controller import SO101Controller
+from examples.common.pink_ik_solver import PinkIKSolver
+from examples.common.so101_controller import SO101Controller
 
 
 parser = argparse.ArgumentParser(
