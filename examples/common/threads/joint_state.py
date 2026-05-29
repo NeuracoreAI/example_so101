@@ -1,17 +1,13 @@
 """Joint state thread - reads joint state and sends commands to SO101 follower."""
 
-import sys
 import time
 import traceback
-from pathlib import Path
 
 import numpy as np
-# Repo root (example_lerobot_so101) so so101_controller is importable
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent.parent))
+
 from common.configs import JOINT_STATE_STREAMING_RATE
 from common.data_manager import DataManager, RobotActivityState
-
-from so101_controller import SO101Controller
+from common.so101_controller import SO101Controller
 
 
 def joint_state_thread(

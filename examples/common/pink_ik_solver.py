@@ -13,7 +13,7 @@ import pinocchio as pin
 from pink.tasks import DampingTask, FrameTask
 from scipy.spatial.transform import Rotation
 
-from vectorised_posture_task import VectorisedPostureTask
+from .vectorised_posture_task import VectorisedPostureTask
 
 
 class PinkIKSolver:

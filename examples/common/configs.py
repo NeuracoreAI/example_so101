@@ -118,6 +118,9 @@ SO101_JOINT_LIMITS_DEG = np.array(
 )
 SO101_OFFSETS_DEG = np.array([0.0, -90.0, 90.0, 0.0, 0.0], dtype=np.float64)
 SO101_OFFSETS_DEG_2 = np.array([0.0, 0.0, 0.0, 0.0, 0.0], dtype=np.float64)
+# Gripper offset applied to the raw 0–100 bus value before normalising to 0–1.
+SO101_GRIPPER_OFFSET = -20.0
+SO101_GRIPPER_OFFSET_2 = 0.0
 SO101_DIRECTIONS = np.array([1.0, 1.0, 1.0, 1.0, 1.0], dtype=np.float64)
 # Leader joint index -> Follower joint index (1:1)
 LEADER_TO_SO101_JOINT = {0: 0, 1: 1, 2: 2, 3: 3, 4: 4}

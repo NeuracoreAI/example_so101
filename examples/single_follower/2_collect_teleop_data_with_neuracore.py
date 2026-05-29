@@ -19,7 +19,7 @@ import neuracore as nc
 import numpy as np
 
 # Repo root for so101_controller; examples for common.*
-_root = Path(__file__).resolve().parent.parent
+_root = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(_root))
 sys.path.insert(0, str(_root / "examples"))
 
@@ -37,6 +37,7 @@ from common.configs import (  # type: ignore  # noqa: E402
     ROBOT_RATE,
     SO101_DIRECTIONS,
     SO101_FIXED_JOINTS,
+    SO101_GRIPPER_OFFSET,
     SO101_JOINT_LIMITS_DEG,
     SO101_OFFSETS_DEG,
     URDF_PATH,
@@ -46,7 +47,7 @@ from common.leader_arm import LerobotSO101LeaderArm  # type: ignore  # noqa: E40
 from common.threads.camera import camera_thread  # type: ignore  # noqa: E402
 from common.threads.joint_state import joint_state_thread  # type: ignore  # noqa: E402
 from common.threads.leader_arm_controller import leader_arm_controller_thread  # type: ignore  # noqa: E402
-from so101_controller import SO101Controller  # type: ignore  # noqa: E402
+from common.so101_controller import SO101Controller  # type: ignore  # noqa: E402
 
 
 def log_to_neuracore_on_change_callback(
@@ -219,6 +220,7 @@ def main() -> None:
         follower_directions=SO101_DIRECTIONS,
         leader_to_follower_joint=LEADER_TO_SO101_JOINT,
         fixed_joints=SO101_FIXED_JOINTS,
+        gripper_offset=SO101_GRIPPER_OFFSET,
     )
     try:
         leader.connect(calibrate=False)

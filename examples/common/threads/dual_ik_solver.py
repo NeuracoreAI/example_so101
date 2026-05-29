@@ -8,15 +8,12 @@ computed on teleop activation.
 
 from __future__ import annotations
 
-import sys
 import time
 import traceback
-from pathlib import Path
 from typing import Any
 
 import numpy as np
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent.parent))
 from common.configs import (
     IK_SOLVER_RATE,
     LEFT_END_EFFECTOR_FRAME_NAME,
@@ -29,7 +26,7 @@ from common.utils import (
     map_quest_hands_to_robot_arms,
 )
 
-from pink_ik_solver import PinkIKSolver
+from common.pink_ik_solver import PinkIKSolver
 
 _DIVERGENCE_TOLERANCE_DEG = 0.1
 

@@ -15,7 +15,7 @@ from pathlib import Path
 
 import numpy as np
 
-_root = Path(__file__).resolve().parent.parent
+_root = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(_root))
 sys.path.insert(0, str(_root / "examples"))
 
@@ -27,6 +27,8 @@ from common.configs import (
     ROBOT_RATE,
     SO101_DIRECTIONS,
     SO101_FIXED_JOINTS,
+    SO101_GRIPPER_OFFSET,
+    SO101_GRIPPER_OFFSET_2,
     SO101_JOINT_LIMITS_DEG,
     SO101_OFFSETS_DEG,
     SO101_OFFSETS_DEG_2,
@@ -107,6 +109,7 @@ def main() -> None:
         follower_directions=SO101_DIRECTIONS,
         leader_to_follower_joint=LEADER_TO_SO101_JOINT,
         fixed_joints=SO101_FIXED_JOINTS,
+        gripper_offset=SO101_GRIPPER_OFFSET,
     )
 
     right_leader = LerobotSO101LeaderArm(
@@ -119,6 +122,7 @@ def main() -> None:
         follower_directions=SO101_DIRECTIONS,
         leader_to_follower_joint=LEADER_TO_SO101_JOINT,
         fixed_joints=SO101_FIXED_JOINTS,
+        gripper_offset=SO101_GRIPPER_OFFSET_2,
     )
 
     print("\n🦾 Connecting to SO101 leader arms...")
@@ -148,7 +152,7 @@ def main() -> None:
 
     if use_real_robot:
         from common.threads.dual_joint_state import dual_joint_state_thread
-        from so101_dual_controller import SO101DualController
+        from common.so101_dual_controller import SO101DualController
 
         print("\n🤖 Initializing dual SO101 follower controller...")
         dual_ctrl = SO101DualController(

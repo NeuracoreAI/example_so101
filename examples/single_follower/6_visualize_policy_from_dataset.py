@@ -20,7 +20,7 @@ from neuracore.core.utils.robot_data_spec_utils import merge_cross_embodiment_de
 from PIL import Image
 from viser.extras import ViserUrdf
 
-_root = Path(__file__).resolve().parent.parent
+_root = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(_root))
 sys.path.insert(0, str(_root / "examples"))
 

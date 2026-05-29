@@ -23,7 +23,9 @@ from pathlib import Path
 import neuracore as nc
 import numpy as np
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
+_root = Path(__file__).resolve().parent.parent.parent
+sys.path.insert(0, str(_root))
+sys.path.insert(0, str(_root / "examples"))
 
 from common.configs import (  # type: ignore  # noqa: E402
     CAMERA_2_DEVICE_INDEX,
@@ -55,11 +57,12 @@ from common.configs import (  # type: ignore  # noqa: E402
     TRANSLATION_SCALE,
 )
 from common.data_manager_dual import DualDataManager, RobotActivityState  # type: ignore  # noqa: E402
+from common.threads.dual_camera import dual_camera_thread  # noqa: E402
 from common.threads.dual_ik_solver import dual_ik_solver_thread  # type: ignore  # noqa: E402
 from common.threads.dual_joint_state import dual_joint_state_thread  # type: ignore  # noqa: E402
 from meta_quest_teleop.reader import MetaQuestReader
-from pink_ik_solver import PinkIKSolver
-from so101_dual_controller import SO101DualController
+from common.pink_ik_solver import PinkIKSolver
+from common.so101_dual_controller import SO101DualController
 
 _BODY_DOF = 5
 _NC_ROBOT_NAME = "LeRobot SO101 Dual"
@@ -133,67 +136,6 @@ def _neuracore_logging_thread(data_manager: DualDataManager, rate_hz: float) -> 
         traceback.print_exc()
     finally:
         print("📡 Neuracore logging thread stopped")
-
-
-def _run_camera(
-    dm: DualDataManager,
-    camera_name: str,
-    device_index: int,
-    width: int,
-    height: int,
-) -> None:
-    """Camera capture loop — mirrors common/threads/camera.py for the dual-arm setup.
-
-    Writes frames to DualDataManager only. NC logging is handled by the shared
-    Neuracore logging thread so this loop is never blocked by frame encoding.
-    """
-    import cv2
-
-    print(f"📷 Camera thread started (device {device_index}, name='{camera_name}')")
-    dt: float = 1.0 / CAMERA_FRAME_STREAMING_RATE
-    cap: cv2.VideoCapture | None = None
-
-    try:
-        cap = cv2.VideoCapture(device_index)
-        if not cap.isOpened():
-            print(
-                f"❌ Could not open camera device {device_index} ('{camera_name}'). "
-                "Check connection and device index."
-            )
-            return
-
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
-        cap.set(cv2.CAP_PROP_FPS, CAMERA_FRAME_STREAMING_RATE)
-        actual_w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        actual_h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        print(f"  '{camera_name}' opened: {actual_w}x{actual_h} @ ~{CAMERA_FRAME_STREAMING_RATE} Hz")
-
-        while not dm.is_shutdown_requested():
-            iteration_start = time.time()
-
-            ret, frame = cap.read()
-            if not ret or frame is None:
-                print(f"⚠️  Camera '{camera_name}' read failed, skipping frame")
-                time.sleep(dt)
-                continue
-
-            rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            dm.set_rgb_image(rgb, camera_name)
-
-            elapsed = time.time() - iteration_start
-            sleep_time = dt - elapsed
-            if sleep_time > 0:
-                time.sleep(sleep_time)
-
-    except Exception as e:
-        print(f"❌ Camera thread error ('{camera_name}'): {e}")
-        traceback.print_exc()
-    finally:
-        if cap is not None:
-            cap.release()
-            print(f"  ✓ Camera '{camera_name}' released")
-        print(f"📷 Camera thread stopped ('{camera_name}')")
 
 
 def main() -> None:
@@ -327,12 +269,12 @@ def main() -> None:
     # ── Camera threads ────────────────────────────────────────────────────────
 
     cam1_thread = threading.Thread(
-        target=_run_camera,
+        target=dual_camera_thread,
         args=(data_manager, "rgb", CAMERA_DEVICE_INDEX, CAMERA_WIDTH, CAMERA_HEIGHT),
         daemon=True,
     )
     cam2_thread = threading.Thread(
-        target=_run_camera,
+        target=dual_camera_thread,
         args=(data_manager, "rgb_2", CAMERA_2_DEVICE_INDEX, CAMERA_2_WIDTH, CAMERA_2_HEIGHT),
         daemon=True,
     )

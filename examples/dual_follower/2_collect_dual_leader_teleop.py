@@ -26,7 +26,7 @@ from typing import Any
 import neuracore as nc
 import numpy as np
 
-_root = Path(__file__).resolve().parent.parent
+_root = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(_root))
 sys.path.insert(0, str(_root / "examples"))
 
@@ -45,6 +45,8 @@ from common.configs import (  # type: ignore  # noqa: E402
     ROBOT_RATE,
     SO101_DIRECTIONS,
     SO101_FIXED_JOINTS,
+    SO101_GRIPPER_OFFSET,
+    SO101_GRIPPER_OFFSET_2,
     SO101_JOINT_LIMITS_DEG,
     SO101_OFFSETS_DEG,
     SO101_OFFSETS_DEG_2,
@@ -53,7 +55,7 @@ from common.data_manager_dual import DualDataManager, RobotActivityState  # type
 from common.leader_arm import LerobotSO101LeaderArm  # type: ignore  # noqa: E402
 from common.threads.dual_joint_state import dual_joint_state_thread  # type: ignore  # noqa: E402
 from common.threads.dual_leader_reader import dual_leader_reader_thread  # type: ignore  # noqa: E402
-from so101_dual_controller import SO101DualController  # type: ignore  # noqa: E402
+from common.so101_dual_controller import SO101DualController  # type: ignore  # noqa: E402
 
 _NC_ROBOT_NAME = "LeRobot SO101 Dual"
 _NC_LOGGING_RATE_HZ = 30.0
@@ -299,6 +301,7 @@ def main() -> None:
         follower_directions=SO101_DIRECTIONS,
         leader_to_follower_joint=LEADER_TO_SO101_JOINT,
         fixed_joints=SO101_FIXED_JOINTS,
+        gripper_offset=SO101_GRIPPER_OFFSET,
     )
 
     right_leader = LerobotSO101LeaderArm(
@@ -311,6 +314,7 @@ def main() -> None:
         follower_directions=SO101_DIRECTIONS,
         leader_to_follower_joint=LEADER_TO_SO101_JOINT,
         fixed_joints=SO101_FIXED_JOINTS,
+        gripper_offset=SO101_GRIPPER_OFFSET_2,
     )
 
     for side, leader, port, lid in (
