@@ -119,11 +119,10 @@ def _neuracore_logging_thread(data_manager: DualDataManager, rate_hz: float) -> 
                         {f"{side}_gripper": float(target_gripper)}, timestamp=ts
                     )
 
-            if nc.is_recording():
-                for cam_name in _CAMERA_NAMES:
-                    img = data_manager.get_rgb_image(cam_name)
-                    if img is not None:
-                        nc.log_rgb(cam_name, img, timestamp=ts)
+            for cam_name in _CAMERA_NAMES:
+                img = data_manager.get_rgb_image(cam_name)
+                if img is not None:
+                    nc.log_rgb(cam_name, img, timestamp=ts)
 
             elapsed = time.time() - t0
             sleep_time = dt - elapsed
@@ -180,7 +179,6 @@ def _run_camera(
                 continue
 
             rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            rgb = cv2.rotate(rgb, cv2.ROTATE_180)
             dm.set_rgb_image(rgb, camera_name)
 
             elapsed = time.time() - iteration_start

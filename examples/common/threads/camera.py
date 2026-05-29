@@ -48,8 +48,6 @@ def camera_thread(data_manager: DataManager) -> None:
 
             # OpenCV returns BGR; convert to RGB for consistency with pipeline
             rgb_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            # Camera is mounted upside down; rotate 180° to keep images upright
-            rgb_image = cv2.rotate(rgb_image, cv2.ROTATE_180)
             data_manager.set_rgb_image(rgb_image)
 
             elapsed = time.time() - iteration_start

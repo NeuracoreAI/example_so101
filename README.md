@@ -202,18 +202,134 @@ python examples/6_visualize_policy_from_dataset.py \
 
 Loads a random synchronized dataset step, runs the policy, and animates the predicted horizon in Viser (no real robot).
 
-### Meta Quest Teleop
+### Dual Leader and Dual Follower Setup
 
-#### Additional installation
+Use two SO101 leader arms to drive two SO101 follower arms simultaneously. The left leader maps directly to the left follower and the right leader maps directly to the right follower — no IK involved. Each pair uses an independent joint offset configuration (`SO101_OFFSETS_DEG` for the left pair, `SO101_OFFSETS_DEG_2` for the right pair).
 
-Install the Pink IK dependencies and the `meta_quest_teleop` package:
+**Hardware required:** four SO101 arms (two leaders, two followers) on four separate USB ports.
+
+#### Example 1 – Dual leader → dual follower teleop
 
 ```bash
-conda env update -f environment.yaml          # adds pin, pin-pink, qpsolvers[quadprog]
-pip install -e meta_quest_teleop/             # installs the MetaQuestReader package
+python examples/1_dual_leader_teleop.py \
+  --left-leader-port /dev/ttyACM0 --left-leader-id my_awesome_left_leader \
+  --right-leader-port /dev/ttyACM2 --right-leader-id my_awesome_right_leader \
+  --left-follower-port /dev/ttyACM1 --left-follower-id my_awesome_left_follower \
+  --right-follower-port /dev/ttyACM3 --right-follower-id my_awesome_right_follower \
+  --real-robot
 ```
 
-Ensure your Meta Quest headset is **on the same WiFi network** as your machine and has the companion app running (see the `meta_quest_teleop` README for the Android app setup).
+Omit `--real-robot` to drive the dual-arm URDF only (no follower hardware needed).
+
+**Optional arguments:**
+
+| Flag | Default | Description |
+|---|---|---|
+| `--left-leader-port` | `/dev/ttyACM0` | Serial port for the left leader arm |
+| `--left-leader-id` | `my_awesome_left_leader` | Left leader calibration ID |
+| `--right-leader-port` | `/dev/ttyACM2` | Serial port for the right leader arm |
+| `--right-leader-id` | `my_awesome_right_leader` | Right leader calibration ID |
+| `--left-follower-port` | `/dev/ttyACM1` | Serial port for the left follower arm |
+| `--left-follower-id` | `my_awesome_left_follower` | Left follower ID |
+| `--right-follower-port` | `/dev/ttyACM3` | Serial port for the right follower arm |
+| `--right-follower-id` | `my_awesome_right_follower` | Right follower ID |
+| `--leader-rate` | `50.0` | Leader arm polling rate in Hz |
+| `--real-robot` | off | Drive real follower hardware (default: URDF only) |
+
+**Viser GUI** (`http://localhost:8080`, real-robot mode only):
+
+- **Enable / Disable** both follower arms
+- **Home** both arms
+- **Ghost robot** preview of the leader-commanded target pose
+
+#### Example 2 – Dual leader teleop with Neuracore data collection
+
+Same as example 1 (always drives real followers) but streams joint positions, gripper states, and two RGB camera frames to [Neuracore](https://neuracore.ai) for dataset collection. Recording is controlled from the keyboard.
+
+```bash
+python examples/2_collect_dual_leader_teleop.py \
+  --left-leader-port /dev/ttyACM0 --left-leader-id my_awesome_left_leader \
+  --right-leader-port /dev/ttyACM2 --right-leader-id my_awesome_right_leader \
+  --left-follower-port /dev/ttyACM1 --left-follower-id my_awesome_left_follower \
+  --right-follower-port /dev/ttyACM3 --right-follower-id my_awesome_right_follower \
+  --dataset-name so101-dual-demo
+```
+
+**Prerequisites:** A Neuracore account. The script calls `nc.login()` on startup — set your credentials beforehand (see [Neuracore docs](https://neuracore.ai/docs)).
+
+**What it does:**
+- Connects to Neuracore, creates (or reuses) the named dataset, and streams live data at 30 Hz.
+- Logs left and right joint positions and targets, gripper states, and two RGB camera frames (`rgb`, `rgb_2`) per episode.
+- Followers start **disabled** — press `e` to enable before moving leaders.
+- Press **Ctrl+C** to shut down cleanly; any active recording is stopped automatically.
+
+**Optional arguments:**
+
+| Flag | Default | Description |
+|---|---|---|
+| `--left-leader-port` | `/dev/ttyACM0` | Serial port for the left leader arm |
+| `--left-leader-id` | `my_awesome_left_leader` | Left leader calibration ID |
+| `--right-leader-port` | `/dev/ttyACM2` | Serial port for the right leader arm |
+| `--right-leader-id` | `my_awesome_right_leader` | Right leader calibration ID |
+| `--left-follower-port` | `/dev/ttyACM1` | Serial port for the left follower arm |
+| `--left-follower-id` | `my_awesome_left_follower` | Left follower ID |
+| `--right-follower-port` | `/dev/ttyACM3` | Serial port for the right follower arm |
+| `--right-follower-id` | `my_awesome_right_follower` | Right follower ID |
+| `--leader-rate` | `50.0` | Leader arm polling rate in Hz |
+| `--dataset-name` | `so101-dual-leader-teleop-<timestamp>` | Dataset name in Neuracore |
+
+**Keyboard controls:**
+
+| Key | Action |
+|---|---|
+| `e` | Enable / disable both follower arms |
+| `r` | Start / stop Neuracore recording |
+| `Ctrl+C` | Exit |
+
+#### Example 3 – Replay dual-arm Neuracore episodes
+
+Replay recorded dual-arm episodes from a Neuracore dataset on the physical robot. Both arms move simultaneously following the recorded trajectories.
+
+```bash
+python examples/3_replay_dual_arm_episodes.py \
+  --dataset-name so101-dual-demo \
+  --frequency 30 \
+  --left-port /dev/ttyACM0 --left-id my_awesome_left_follower \
+  --right-port /dev/ttyACM1 --right-id my_awesome_right_follower \
+  --episode-index 0
+```
+
+**NOTE:** The robot **will start moving** immediately on the recorded trajectory. Press `Ctrl+C` to stop, or `q` in any OpenCV window to abort the current episode.
+
+**Arguments:**
+
+| Flag | Default | Description |
+|---|---|---|
+| `--dataset-name` | *(required)* | Name of the Neuracore dataset to replay |
+| `--frequency` | *(required)* | Playback frequency in Hz |
+| `--left-port` | `/dev/ttyACM0` | Serial port for the left follower arm |
+| `--left-id` | `my_awesome_left_follower` | Left follower ID |
+| `--right-port` | `/dev/ttyACM1` | Serial port for the right follower arm |
+| `--right-id` | `my_awesome_right_follower` | Right follower ID |
+| `--episode-index` | `0` | Episode to replay; `-1` replays all episodes in sequence |
+
+### Meta Quest Teleop
+
+#### Prerequisites
+
+The following packages are installed automatically by `environment.yaml` when you create the conda environment:
+
+- **`pin-pink`** and **`qpsolvers[quadprog]`** — Pink IK solver dependencies
+- **`meta_quest_teleop`** — MetaQuestReader package, pulled from [NeuracoreAI/meta_quest_teleop](https://github.com/NeuracoreAI/meta_quest_teleop)
+
+No extra installation steps are needed beyond the standard `conda env create -f environment.yaml`.
+
+#### Connecting the Meta Quest headset
+
+The companion app must be running on the headset (see the `meta_quest_teleop` README for setup). Two connection modes are supported:
+
+- **USB (recommended)** — connect the headset via USB and omit `--ip-address`; the device will be auto-discovered.
+- **WiFi** — ensure the headset is on the same network as your machine and pass `--ip-address <quest-ip>`.
 
 #### Example 7 – IK parameter tuning (single arm)
 
@@ -330,14 +446,15 @@ python examples/9_collect_dual_teleop_data.py \
 ```
 example_so101/
 ├── examples/
-│   ├── 1_leader_arm_teleop_so101.py              # SO101 leader → SO101 follower teleop (URDF or real robot)
-│   ├── 2_collect_teleop_data_with_neuracore.py   # Teleop with Neuracore data collection
+│   ├── 1_dual_leader_teleop.py                   # Dual SO101 leaders → dual SO101 followers (URDF or real robot)
+│   ├── 2_collect_dual_leader_teleop.py           # Dual leader teleop + Neuracore data collection
+│   ├── 3_replay_dual_arm_episodes.py             # Replay dual-arm Neuracore episodes on real hardware
 │   ├── 4_rollout_neuracore_policy.py             # Policy rollout + leader teleop + Viser
 │   ├── 5_rollout_neuracore_policy_minimal.py     # Minimal policy rollout (terminal only)
 │   ├── 6_visualize_policy_from_dataset.py        # Policy preview from dataset (Viser only)
 │   ├── 7_tune_quest_teleop_params.py             # Meta Quest IK teleop + live parameter tuning (single arm)
 │   ├── 8_dual_arm_teleop.py                      # Dual-arm Meta Quest teleoperation (10-DOF IK)
-│   ├── 9_collect_dual_teleop_data.py             # Dual-arm teleop + Neuracore data collection
+│   ├── 9_collect_dual_teleop_data.py             # Dual-arm Meta Quest teleop + Neuracore data collection
 │   └── common/                                   # Config, data manager, visualizer, threads, STS3215 driver
 ├── tests/                                        # Unit tests (no hardware required)
 ├── meta_quest_teleop/                            # MetaQuestReader package (install with pip install -e)

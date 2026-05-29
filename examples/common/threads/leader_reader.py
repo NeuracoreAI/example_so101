@@ -24,6 +24,9 @@ def leader_reader_thread(
             try:
                 joint_angles, gripper_open = leader_arm.read_mapped()
                 data_manager.set_leader_mapped_state(joint_angles, gripper_open)
+            except OSError as e:
+                print(f"⚠️  Leader read error (retrying): {e}")
+                continue
             except RuntimeError as e:
                 if "no calibration registered" in str(e):
                     print(
